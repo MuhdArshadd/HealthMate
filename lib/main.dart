@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:healthmate/AuthProvider/Auth_provider.dart'; 
 import 'splash_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter is initialized
-  await Future.delayed(Duration(seconds: 3)); // Simulate loading before runApp()
+  WidgetsFlutterBinding.ensureInitialized();
+  await Future.delayed(Duration(seconds: 3)); // Simulate loading
 
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => AuthProvider()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -13,7 +22,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(), // Show splash screen first
+      home: SplashScreen(),
     );
   }
 }

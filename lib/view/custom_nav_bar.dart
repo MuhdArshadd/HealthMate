@@ -5,9 +5,10 @@ class CustomBottomNavBar extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
 
-  CustomBottomNavBar({required this.currentIndex, required this.onTap});
+  const CustomBottomNavBar({super.key, required this.currentIndex, required this.onTap});
 
   @override
+  // ignore: library_private_types_in_public_api
   _CustomBottomNavBarState createState() => _CustomBottomNavBarState();
 }
 
@@ -45,7 +46,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
         _positionX = newPosition;
       });
 
-      Future.delayed(Duration(milliseconds: 200), () {
+      Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted) {
           setState(() {
             _iconOpacity = 1.0; // Fade in icon after reaching target
@@ -66,7 +67,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
       children: [
         Container(
           height: 80,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Color(0xFF3674B5),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
@@ -83,7 +84,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
           ),
         ),
         AnimatedPositioned(
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           left: _positionX,
           top: -20,
@@ -100,7 +101,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: Colors.white, size: 30),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           Text(
             label,
             style: GoogleFonts.poppins(
@@ -127,8 +128,8 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        border: Border.all(color: Color(0xFF3674B5), width: 4),
-        boxShadow: [
+        border: Border.all(color: const Color(0xFF3674B5), width: 4),
+        boxShadow: const [
           BoxShadow(
             color: Colors.black26,
             blurRadius: 5,
@@ -138,9 +139,9 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
       ),
       child: Center(
         child: AnimatedOpacity(
-          duration: Duration(milliseconds: 100), // Faster disappearance
+          duration: const Duration(milliseconds: 100), // Faster disappearance
           opacity: _iconOpacity,
-          child: Icon(icon, color: Color(0xFF3674B5), size: 30),
+          child: Icon(icon, color: const Color(0xFF3674B5), size: 30),
         ),
       ),
     );

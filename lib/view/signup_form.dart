@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:healthmate/controller/user_controller.dart';
+// import 'login_page.dart';
 
 class SignUpForm extends StatefulWidget {
   final DraggableScrollableController sheetController;
@@ -15,21 +17,96 @@ class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
-  void _signup() {
-    String username = _usernameController.text;
-    String email = _emailController.text;
-    String password = _passwordController.text;
-    String confirmPassword = _confirmPasswordController.text;
+  final UserController _userController = UserController();
+  bool _isLoading = false;
 
-    if (password == confirmPassword) {
-      print("Sign Up Successful!");
-      print("Username: $username");
-      print("Email: $email");
-      print("Password: $password");
-    } else {
-      print("Error: Passwords do not match.");
-    }
+void _signup() async {
+  String username = _usernameController.text;
+  String email = _emailController.text;
+  String password = _passwordController.text;
+  String confirmPassword = _confirmPasswordController.text;
+
+  if (password != confirmPassword) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Error"),
+        content: const Text("Passwords do not match."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+    return;
   }
+
+    setState(() {
+    _isLoading = true;
+  });
+
+    try {
+    String response = await _userController.signUp(
+      "123456789",
+      username,
+      email,
+      password,
+      confirmPassword,
+      null,
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (response.contains("Error:")) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Error"),
+          content: Text(response),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } else {
+
+showDialog(
+  context: context,
+  builder: (context) => AlertDialog(
+    title: const Text("Success"),
+    content: const Text("Registration successful! Please log in."),
+    actions: [
+      TextButton(
+        onPressed: () {
+          Navigator.of(context, rootNavigator: true).pop(); // Close the alert dialog
+          widget.sheetController.animateTo(
+            0.0, // Collapse the sheet
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+          );
+        },
+
+        child: const Text("OK"),
+      ),
+    ],
+  ),
+);
+
+    }
+  } catch (e) {
+    setState(() {
+      _isLoading = false;
+    });
+    print("Error: $e");
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +163,7 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                   TextField(
                     controller: _passwordController,
+                    obscureText: true,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -129,7 +207,6 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                   TextField(
                     controller: _emailController,
-                    obscureText: true,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -146,14 +223,16 @@ class _SignUpFormState extends State<SignUpForm> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: _signup,
-                    child: const Text(
-                      "Sign Up",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
+                    onPressed: _isLoading ? null : _signup,
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            "Sign Up",
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          ),
                   ),
                   const SizedBox(height: 16),
-                  Row(
+                  const Row(
                     children: [
                       Expanded(
                         child: Divider(
@@ -162,7 +241,7 @@ class _SignUpFormState extends State<SignUpForm> {
                           endIndent: 10,
                         ),
                       ),
-                      const Text(
+                      Text(
                         "Or",
                         style: TextStyle(
                           fontSize: 16,
@@ -185,11 +264,11 @@ class _SignUpFormState extends State<SignUpForm> {
                       // Handle Google Sign-In
                     },
                     child: Container(
-                      width: 40, // Square shape
+                      width: 40, 
                       height: 40,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(8), // Slightly rounded corners
+                        borderRadius: BorderRadius.circular(8), 
                         border: Border.all(
                           color: Colors.black,
                           width: 2,

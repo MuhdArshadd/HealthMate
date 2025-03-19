@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:healthmate/controller/user_controller.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:healthmate/AuthProvider/Auth_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:healthmate/view/login_page.dart';
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-
-
   const CustomAppBar({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final GoogleSignIn signIn = GoogleSignIn(); 
+
     return PreferredSize(
       preferredSize: const Size.fromHeight(100),
       child: AppBar(
@@ -38,9 +43,36 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               ),
               GestureDetector(
-                onTap: () {
-                  print("Language icon tapped!"); // Debug print
-                }, // Call function when language icon is tapped
+                onTap: () async {
+                  print("Language icon tapped!"); 
+                  bool confirmLogout = await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("Logout"),
+                      content: const Text("Are you sure you want to log out?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false), 
+                          child: const Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true), 
+                          child: const Text("Logout"),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmLogout == true) {
+                    await signIn.signOut(); 
+                    Provider.of<AuthProvider>(context, listen: false).logout(); 
+                    
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginPage()),
+                    );
+                  }
+                },
                 child: const Icon(Icons.language, color: Colors.white),
               ),
             ],
@@ -49,6 +81,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
+
   @override
   Size get preferredSize => const Size.fromHeight(100);
 }

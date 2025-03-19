@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'db_connection.dart';
+import 'package:healthmate/db_connection.dart';
 
 void main() {
   runApp(const MyApp());

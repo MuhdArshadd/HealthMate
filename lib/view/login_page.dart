@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'forgot_password.dart';
 import 'main_navigation_screen.dart';
-import 'signup_form.dart'; // Import the SignUpForm
-import 'homepage.dart';
+import 'package:healthmate/controller/user_controller.dart';
+import 'package:provider/provider.dart';
+import 'package:healthmate/AuthProvider/Auth_provider.dart' as local_auth;
+import 'package:google_sign_in/google_sign_in.dart';
+
+
+import 'signup_form.dart';
+// import 'homepage.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,24 +21,177 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final DraggableScrollableController _sheetController = DraggableScrollableController();
-  final DraggableScrollableController _forgotPasswordController = DraggableScrollableController();
+  final DraggableScrollableController _forgotPasswordController =
+      DraggableScrollableController();
 
-  bool _isPasswordVisible = false;
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+  final UserController _userController = UserController();
+
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
 
-  void _login() {
-    String username = _usernameController.text;
-    String password = _passwordController.text;
-    print("Login Attempt:");
-    print("Email: $username");
-    print("Password: $password");
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MainNavigationScreen()
+
+GoogleSignIn signIn = GoogleSignIn();
+
+void googleSignIn() async {
+  setState(() => _isLoading = true);
+
+  try {
+    await signIn.signOut(); 
+    final user = await signIn.signIn();
+
+    if (user != null) {
+      print("Sign in successful!");
+      print("User data: $user");
+
+      final String displayName = user.displayName ?? "User";
+      final String email = user.email;
+      final String? photoUrl = user.photoUrl;
+
+      String response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response == "Login Successful" || response.contains("New user created")) {
+        Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+              print(
+          "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
+
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Success"),
+            content: const Text("Google Sign-In Successful!"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+                  );
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      } else {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Error"),
+            content: Text(response),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
+      setState(() => _isLoading = false);
+      print("Sign in canceled or failed");
+    }
+  } catch (e) {
+    setState(() => _isLoading = false);
+    print("Sign in failed with error: $e");
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Error"),
+        content: Text("Sign in failed: $e"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
       ),
     );
+  } 
+}
+
+
+  void _login() async {
+    String username = _usernameController.text;
+    String password = _passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      print("Login Failed: Username or password is empty");
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Error"),
+          content: const Text("Please enter both username and password."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    String response = await _userController.login(username, password);
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (response == "Login Successful") {
+      print("Login Successful: User $username has logged in.");
+      Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+      print(
+          "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Success"),
+          content: const Text("Login Successful!"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const MainNavigationScreen()),
+                );
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      print("Login Failed: $response");
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Error"),
+          content: Text(response),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -64,7 +224,8 @@ class _LoginPageState extends State<LoginPage> {
                 child: Container(
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(40)),
                   ),
                   child: SingleChildScrollView(
                     child: Center(
@@ -137,7 +298,7 @@ class _LoginPageState extends State<LoginPage> {
                               alignment: Alignment.centerRight,
                               child: TextButton(
                                 onPressed: () {
-                                  _forgotPasswordController.animateTo(
+                                  _sheetController.animateTo(
                                     0.8,
                                     duration: const Duration(milliseconds: 300),
                                     curve: Curves.easeOut,
@@ -155,36 +316,38 @@ class _LoginPageState extends State<LoginPage> {
                             _isLoading
                                 ? const CircularProgressIndicator()
                                 : ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 143, vertical: 15),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                                onPressed: _login,
-                              child: const Text(
-                                "LOG IN",
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.white,
-                                    fontFamily: 'Inter'),
-                              ),
-                            ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.black,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 143, vertical: 15),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                    onPressed: _login,
+                                    child: const Text(
+                                      "LOG IN",
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.white,
+                                          fontFamily: 'Inter'),
+                                    ),
+                                  ),
                             const SizedBox(height: 10),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 const Text(
                                   "Don’t have an account? ",
-                                  style: TextStyle(fontFamily: 'Inter', fontSize: 14),
+                                  style: TextStyle(
+                                      fontFamily: 'Inter', fontSize: 14),
                                 ),
                                 GestureDetector(
                                   onTap: () {
                                     _sheetController.animateTo(
                                       0.8,
-                                      duration: const Duration(milliseconds: 300),
+                                      duration:
+                                          const Duration(milliseconds: 300),
                                       curve: Curves.easeOut,
                                     );
                                   },
@@ -200,7 +363,7 @@ class _LoginPageState extends State<LoginPage> {
                               ],
                             ),
                             const SizedBox(height: 16),
-                            Row(
+                            const Row(
                               children: [
                                 Expanded(
                                   child: Divider(
@@ -209,7 +372,7 @@ class _LoginPageState extends State<LoginPage> {
                                     endIndent: 10,
                                   ),
                                 ),
-                                const Text(
+                                Text(
                                   "Or",
                                   style: TextStyle(
                                     fontSize: 16,
@@ -228,15 +391,13 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 16),
                             GestureDetector(
-                              onTap: () {
-                                // Handle Google Sign-In
-                              },
+                              onTap: googleSignIn,
                               child: Container(
                                 width: 40, // Square shape
                                 height: 40,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8), // Slightly rounded corners
+                                  borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: Colors.black,
                                     width: 2,
@@ -261,7 +422,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-          // Include Sign-Up Form as a separate widget
           SignUpForm(sheetController: _sheetController),
           ForgotPasswordForm(sheetController: _forgotPasswordController),
         ],

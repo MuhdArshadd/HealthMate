@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'home_screen.dart';
-import 'view/loginPage.dart';
+import 'view/login_page.dart';
 
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _SplashScreenState createState() => _SplashScreenState();
 }
 
@@ -24,7 +26,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     // ECG Wave Draw Animation (Revealing from Left to Right)
     _waveController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 3),
+      duration: const Duration(seconds: 3),
     );
 
     _waveAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
@@ -39,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     // Heart & Text Fade-in Animation
     _fadeController = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 1),
+      duration: const Duration(seconds: 1),
     );
 
     _heartOpacity = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
@@ -53,10 +55,10 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     ));
 
     // Navigate to home screen after full animation
-    Timer(Duration(seconds: 5), () {
+    Timer(const Duration(seconds: 5), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LoginPage()),
+        MaterialPageRoute(builder: (context) => const LoginPage()),
       );
     });
   }
@@ -107,12 +109,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // "HelpMate" Text Appears Last
             FadeTransition(
               opacity: _textOpacity,
-              child: Text(
+              child: const Text(
                 "HelpMate",
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),

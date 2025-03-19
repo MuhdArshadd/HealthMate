@@ -38,16 +38,16 @@ class _HomePageState extends State<HomePage> {
             children: [
               const SizedBox(height: 20),
               // Greeting Section
-              Row(
+              const Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     backgroundImage: AssetImage("assets/user.png"), // Replace with actual image
                     radius: 30,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text(
                         "Hi Kaneemi!",
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -136,7 +136,7 @@ class _HomePageState extends State<HomePage> {
                                     onTap: () {
                                       // Handle "See All" action
                                     },
-                                    child: Text(
+                                    child: const Text(
                                       "See All",
                                       style: TextStyle(
                                         fontSize: 14,

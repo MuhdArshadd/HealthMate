@@ -29,6 +29,14 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
+    signingConfigs {
+        debug {
+            keyAlias = 'test'
+            keyPassword = '123456'
+            storeFile file("test.jks")
+            storePassword = '123456'
+        }
+    }
 
     buildTypes {
         release {
@@ -38,6 +46,8 @@ android {
         }
     }
 }
+
+
 
 flutter {
     source = "../.."
