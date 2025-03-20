@@ -5,7 +5,7 @@ import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Future.delayed(Duration(seconds: 3)); // Simulate loading
+  await Future.delayed(const Duration(seconds: 3)); // Simulate loading
 
   runApp(
     MultiProvider(
@@ -18,9 +18,11 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: SplashScreen(),
     );

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:healthmate/controller/user_controller.dart';
+import 'main_navigation_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+import 'package:healthmate/AuthProvider/Auth_provider.dart' as local_auth;
 // import 'login_page.dart';
 
 class SignUpForm extends StatefulWidget {
@@ -19,6 +23,96 @@ class _SignUpFormState extends State<SignUpForm> {
 
   final UserController _userController = UserController();
   bool _isLoading = false;
+
+
+GoogleSignIn signIn = GoogleSignIn();
+
+void googleSignIn() async {
+  setState(() => _isLoading = true);
+
+  try {
+    await signIn.signOut(); 
+    final user = await signIn.signIn();
+
+    if (user != null) {
+      print("Sign in successful!");
+      print("User data: $user");
+
+      final String displayName = user.displayName ?? "User";
+      final String email = user.email;
+      final String? photoUrl = user.photoUrl;
+
+      String response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response == "Login Successful" || response.contains("New user created")) {
+        Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+              print(
+          "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
+
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Success"),
+            content: const Text("Google Sign-In Successful!"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+                  );
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      } else {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Error"),
+            content: Text(response),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    } else {
+      setState(() => _isLoading = false);
+      print("Sign in canceled or failed");
+    }
+  } catch (e) {
+    setState(() => _isLoading = false);
+    print("Sign in failed with error: $e");
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Error"),
+        content: Text("Sign in failed: $e"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  } 
+}
+
+
+
 
 void _signup() async {
   String username = _usernameController.text;
@@ -260,9 +354,7 @@ showDialog(
                   ),
                   const SizedBox(height: 16),
                   GestureDetector(
-                    onTap: () {
-                      // Handle Google Sign-In
-                    },
+                    onTap: googleSignIn,
                     child: Container(
                       width: 40, 
                       height: 40,
