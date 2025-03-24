@@ -5,6 +5,11 @@ import 'glucose_popup.dart';
 import 'main_navigation_screen.dart';
 import 'sleep_popup.dart';
 
+import 'package:provider/provider.dart';
+import '../AuthProvider/Auth_provider.dart';
+import "../model/user_model.dart";
+
+
 class GlucoseTrackingPage extends StatefulWidget {
   @override
   _GlucoseTrackingPageState createState() => _GlucoseTrackingPageState();
@@ -47,6 +52,9 @@ class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+
     final List<double> glucoseData = showLast7Days ? last7DaysData : _groupDataByWeekday(last1MonthData);
     final double maxGlucose = glucoseData.reduce((a, b) => a > b ? a : b);
     // Calculate the correct average based on the view
@@ -206,7 +214,7 @@ class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainNavigationScreen(selectedIndex: index),
+              builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
             ),
           );
         },

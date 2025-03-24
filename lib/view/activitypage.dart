@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'cognitiveassistantpage.dart';
 import 'custom_app_bar.dart';
 import 'custom_nav_bar.dart';
@@ -6,13 +7,21 @@ import 'glucosetrackingpage.dart';
 import 'main_navigation_screen.dart';
 import 'sleeptrackingpage.dart';
 
+import 'package:provider/provider.dart';
+import '../AuthProvider/Auth_provider.dart';
+import "../model/user_model.dart";
+
 class ActivityPage extends StatelessWidget {
   final bool fromHome; // Flag to indicate navigation from HomePage
 
   const ActivityPage({super.key, required this.fromHome});
 
+
+
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+
     return Scaffold(
       appBar: CustomAppBar(),
       body: ListView(
@@ -42,6 +51,7 @@ class ActivityPage extends StatelessWidget {
           // Add more activities as needed
         ],
       ),
+
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: 0, // Keeps Home highlighted
         onTap: (index) {
@@ -49,7 +59,7 @@ class ActivityPage extends StatelessWidget {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainNavigationScreen(selectedIndex: index),
+              builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
             ),
           );
         },

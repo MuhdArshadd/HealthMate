@@ -3,10 +3,13 @@ import 'chatbotpage.dart';
 import 'custom_nav_bar.dart';
 import 'homepage.dart';
 import 'profilepage.dart';
+import '../model/user_model.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int selectedIndex;
-  MainNavigationScreen({this.selectedIndex = 0});
+  final UserModel user;
+
+  const MainNavigationScreen({super.key, this.selectedIndex = 0, required this.user});
 
   @override
   _MainNavigationScreenState createState() => _MainNavigationScreenState();
@@ -15,16 +18,10 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    HomePage(),
-    ChatbotPage(),
-    ProfilePage(),
-  ];
-
   @override
   void initState() {
     super.initState();
-    _selectedIndex = widget.selectedIndex; // Start with given index
+    _selectedIndex = widget.selectedIndex;
   }
 
   void _onNavTapped(int index) {
@@ -35,8 +32,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> _pages = [
+      HomePage(user: widget.user),
+      ChatbotPage(),
+      ProfilePage(),
+    ];
+
     return Scaffold(
-      body: _pages[_selectedIndex], // Display the selected page
+      body: _pages[_selectedIndex],
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onNavTapped,

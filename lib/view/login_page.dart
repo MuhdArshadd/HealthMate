@@ -6,7 +6,7 @@ import 'main_navigation_screen.dart';
 import 'package:provider/provider.dart';
 import '../AuthProvider/Auth_provider.dart' as local_auth;
 import 'package:google_sign_in/google_sign_in.dart';
-
+import "../model/user_model.dart";
 
 import 'signup_form.dart';
 // import 'homepage.dart';
@@ -22,101 +22,104 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final DraggableScrollableController _forgotPasswordController =
-      DraggableScrollableController();
+  DraggableScrollableController();
 
   final DraggableScrollableController _sheetController =
-      DraggableScrollableController();
+  DraggableScrollableController();
   final UserController _userController = UserController();
 
   bool _isLoading = false;
   bool _isPasswordVisible = false;
 
 
-GoogleSignIn signIn = GoogleSignIn();
+  GoogleSignIn signIn = GoogleSignIn();
 
-void googleSignIn() async {
-  setState(() => _isLoading = true);
+  void googleSignIn() async {
+    setState(() => _isLoading = true);
 
-  try {
-    await signIn.signOut(); 
-    final user = await signIn.signIn();
+    try {
+      await signIn.signOut();
+      final user = await signIn.signIn();
 
-    if (user != null) {
-      print("Sign in successful!");
-      print("User data: $user");
+      if (user != null) {
+        print("Sign in successful!");
+        print("User data: $user");
 
-      final String displayName = user.displayName ?? "User";
-      final String email = user.email;
-      final String? photoUrl = user.photoUrl;
+        final String displayName = user.displayName ?? "User";
+        final String email = user.email;
+        final String? photoUrl = user.photoUrl;
 
-      String response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
+        UserModel? response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        if (response != null) {
+          // Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+          Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
+          print(
+              "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
+
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Success"),
+              content: const Text("Google Sign-In Successful!"),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MainNavigationScreen(user: response),
+                      ),
+                    );
+                  },
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        } else {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Error"),
+              content: Text(response?.message ?? "An unknown error occurred."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        setState(() => _isLoading = false);
+        print("Sign in canceled or failed");
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      print("Sign in failed with error: $e");
 
       if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      if (response == "Login Successful" || response.contains("New user created")) {
-        Provider.of<local_auth.AuthProvider>(context, listen: false).login();
-              print(
-          "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
-
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Success"),
-            content: const Text("Google Sign-In Successful!"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => MainNavigationScreen()),
-                  );
-                },
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
-      } else {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Error"),
-            content: Text(response),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
-      }
-    } else {
-      setState(() => _isLoading = false);
-      print("Sign in canceled or failed");
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Error"),
+          content: Text("Sign in failed: $e"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
     }
-  } catch (e) {
-    setState(() => _isLoading = false);
-    print("Sign in failed with error: $e");
-
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Error"),
-        content: Text("Sign in failed: $e"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  } 
-}
+  }
 
 
   void _login() async {
@@ -144,15 +147,15 @@ void googleSignIn() async {
 
     setState(() => _isLoading = true);
 
-    String response = await _userController.login(username, password);
+    UserModel? response = await _userController.login(username, password);
 
     if (!mounted) return;
 
     setState(() => _isLoading = false);
 
-    if (response == "Login Successful") {
+    if (response != null) {
       print("Login Successful: User $username has logged in.");
-      Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+      Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
       print(
           "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
 
@@ -168,7 +171,8 @@ void googleSignIn() async {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => MainNavigationScreen()),
+                    builder: (context) => MainNavigationScreen(user: response),
+                  ),
                 );
               },
               child: const Text("OK"),
@@ -182,7 +186,7 @@ void googleSignIn() async {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("Error"),
-          content: Text(response),
+          content: Text(response?.message ?? "An unknown error occurred."),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -225,7 +229,7 @@ void googleSignIn() async {
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(40)),
+                    BorderRadius.vertical(top: Radius.circular(40)),
                   ),
                   child: SingleChildScrollView(
                     child: Center(
@@ -316,23 +320,23 @@ void googleSignIn() async {
                             _isLoading
                                 ? const CircularProgressIndicator()
                                 : ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.black,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 143, vertical: 15),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                    ),
-                                    onPressed: _login,
-                                    child: const Text(
-                                      "LOG IN",
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          color: Colors.white,
-                                          fontFamily: 'Inter'),
-                                    ),
-                                  ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 143, vertical: 15),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed: _login,
+                              child: const Text(
+                                "LOG IN",
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                    fontFamily: 'Inter'),
+                              ),
+                            ),
                             const SizedBox(height: 10),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
@@ -347,7 +351,7 @@ void googleSignIn() async {
                                     _sheetController.animateTo(
                                       0.8,
                                       duration:
-                                          const Duration(milliseconds: 300),
+                                      const Duration(milliseconds: 300),
                                       curve: Curves.easeOut,
                                     );
                                   },

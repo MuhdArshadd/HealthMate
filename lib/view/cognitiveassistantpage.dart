@@ -7,6 +7,11 @@ import 'custom_nav_bar.dart';
 import 'main_navigation_screen.dart';
 import 'cognitivegamepage.dart';
 
+
+import 'package:provider/provider.dart';
+import '../AuthProvider/Auth_provider.dart';
+import "../model/user_model.dart";
+
 class CognitiveAssistantPage extends StatefulWidget {
   @override
   _CognitiveAssistantPageState createState() => _CognitiveAssistantPageState();
@@ -17,6 +22,8 @@ class _CognitiveAssistantPageState extends State<CognitiveAssistantPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     return Scaffold(
       appBar: CustomAppBar(),
@@ -147,7 +154,7 @@ class _CognitiveAssistantPageState extends State<CognitiveAssistantPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainNavigationScreen(selectedIndex: index),
+              builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
             ),
           );
         },

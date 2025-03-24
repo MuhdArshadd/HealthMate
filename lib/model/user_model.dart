@@ -1,33 +1,30 @@
-class User {
-  final int id;
-  final String emailAddress;
-  final String username;
-  final String password;
 
-  User({
-    required this.id,
-    required this.emailAddress,
+
+class UserModel {
+  final String userId;
+  final String username;
+  final String email;
+  final String? imageUrl;
+  final bool isGoogleUser;
+  final String? message;
+
+  UserModel({
+    required this.userId,
     required this.username,
-    required this.password,
+    required this.email,
+    this.imageUrl,
+    required this.isGoogleUser,
+    this.message,
   });
 
-  // Convert a User object to a Map (for JSON encoding)
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'email_address': emailAddress,
-      'username': username,
-      'password': password,
-    };
-  }
-
-  // Create a User object from a Map (for JSON decoding)
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      id: json['id'],
-      emailAddress: json['email_address'],
-      username: json['username'],
-      password: json['password'],
+  factory UserModel.fromDatabase(Map<String, dynamic> data) {
+    return UserModel(
+      userId: data['users_id'],
+      username: data['username'],
+      email: data['email_address'],
+      imageUrl: data['image_url'],
+      isGoogleUser: data['isgoogle'] ?? false,
     );
   }
+
 }
