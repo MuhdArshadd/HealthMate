@@ -16,7 +16,7 @@ class ActivityPage extends StatelessWidget {
 
   const ActivityPage({super.key, required this.fromHome});
 
-
+  
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,7 @@ class ActivityPage extends StatelessWidget {
           // Add more activities as needed
         ],
       ),
-
+      
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: 0, // Keeps Home highlighted
         onTap: (index) {

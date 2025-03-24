@@ -26,141 +26,60 @@ class _SignUpFormState extends State<SignUpForm> {
   bool _isLoading = false;
 
 
-  GoogleSignIn signIn = GoogleSignIn();
+GoogleSignIn signIn = GoogleSignIn();
 
-  void googleSignIn() async {
-    setState(() => _isLoading = true);
+void googleSignIn() async {
+  setState(() => _isLoading = true);
 
-    try {
-      await signIn.signOut();
-      final user = await signIn.signIn();
+  try {
+    await signIn.signOut(); 
+    final user = await signIn.signIn();
 
-      if (user != null) {
-        print("Sign in successful!");
-        print("User data: $user");
+    if (user != null) {
+      print("Sign in successful!");
+      print("User data: $user");
 
-        final String displayName = user.displayName ?? "User";
-        final String email = user.email;
-        final String? photoUrl = user.photoUrl;
+      final String displayName = user.displayName ?? "User";
+      final String email = user.email;
+      final String? photoUrl = user.photoUrl;
 
-        UserModel? response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
-
-        if (!mounted) return;
-        setState(() => _isLoading = false);
-
-        if (response != null) {
-          Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
-          print(
-              "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
-
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text("Success"),
-              content: const Text("Google Sign-In Successful!"),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MainNavigationScreen(user: response),
-                      ),
-                    );
-                  },
-                  child: const Text("OK"),
-                ),
-              ],
-            ),
-          );
-        } else {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text("Error"),
-              content: Text(response?.message ?? "An unknown error occurred."),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("OK"),
-                ),
-              ],
-            ),
-          );
-        }
-      } else {
-        setState(() => _isLoading = false);
-        print("Sign in canceled or failed");
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      print("Sign in failed with error: $e");
+      UserModel? response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
 
       if (!mounted) return;
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Error"),
-          content: Text("Sign in failed: $e"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
-    }
-  }
+      setState(() => _isLoading = false);
 
-  void _signup() async {
-    String username = _usernameController.text;
-    String email = _emailController.text;
-    String password = _passwordController.text;
-    String confirmPassword = _confirmPasswordController.text;
+          if (response != null) {
+        Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
+              print(
+          "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
 
-    if (password != confirmPassword) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Error"),
-          content: const Text("Passwords do not match."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      String response = await _userController.signUp(
-        "123456789",
-        username,
-        email,
-        password,
-        confirmPassword,
-        null,
-      );
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (response.contains("Error:")) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Success"),
+            content: const Text("Google Sign-In Successful!"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacement(
+                    context,
+                     MaterialPageRoute(
+                  builder: (context) => MainNavigationScreen(user: response), 
+                ),
+                  );
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      } else {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text("Error"),
-            content: Text(response),
+            content: Text(response?.message ?? "An unknown error occurred."),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -169,38 +88,119 @@ class _SignUpFormState extends State<SignUpForm> {
             ],
           ),
         );
-      } else {
-
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Success"),
-            content: const Text("Registration successful! Please log in."),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context, rootNavigator: true).pop(); // Close the alert dialog
-                  widget.sheetController.animateTo(
-                    0.0, // Collapse the sheet
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeOut,
-                  );
-                },
-
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
-
       }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      print("Error: $e");
+    } else {
+      setState(() => _isLoading = false);
+      print("Sign in canceled or failed");
     }
+  } catch (e) {
+    setState(() => _isLoading = false);
+    print("Sign in failed with error: $e");
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Error"),
+        content: Text("Sign in failed: $e"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  } 
+}
+
+void _signup() async {
+  String username = _usernameController.text;
+  String email = _emailController.text;
+  String password = _passwordController.text;
+  String confirmPassword = _confirmPasswordController.text;
+
+  if (password != confirmPassword) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Error"),
+        content: const Text("Passwords do not match."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+    return;
   }
+
+    setState(() {
+    _isLoading = true;
+  });
+
+    try {
+    String response = await _userController.signUp(
+      "123456789",
+      username,
+      email,
+      password,
+      confirmPassword,
+      null,
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (response.contains("Error:")) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Error"),
+          content: Text(response),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } else {
+
+showDialog(
+  context: context,
+  builder: (context) => AlertDialog(
+    title: const Text("Success"),
+    content: const Text("Registration successful! Please log in."),
+    actions: [
+      TextButton(
+        onPressed: () {
+          Navigator.of(context, rootNavigator: true).pop(); // Close the alert dialog
+          widget.sheetController.animateTo(
+            0.0, // Collapse the sheet
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+          );
+        },
+
+        child: const Text("OK"),
+      ),
+    ],
+  ),
+);
+
+    }
+  } catch (e) {
+    setState(() {
+      _isLoading = false;
+    });
+    print("Error: $e");
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -321,9 +321,9 @@ class _SignUpFormState extends State<SignUpForm> {
                     child: _isLoading
                         ? const CircularProgressIndicator(color: Colors.white)
                         : const Text(
-                      "Sign Up",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
+                            "Sign Up",
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          ),
                   ),
                   const SizedBox(height: 16),
                   const Row(
@@ -356,11 +356,11 @@ class _SignUpFormState extends State<SignUpForm> {
                   GestureDetector(
                     onTap: googleSignIn,
                     child: Container(
-                      width: 40,
+                      width: 40, 
                       height: 40,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8), 
                         border: Border.all(
                           color: Colors.black,
                           width: 2,

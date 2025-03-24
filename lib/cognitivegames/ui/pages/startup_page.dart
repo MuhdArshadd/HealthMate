@@ -17,7 +17,7 @@ class StartUpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
+        final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     return Scaffold(
       appBar: CustomAppBar(),
@@ -48,7 +48,7 @@ class StartUpPage extends StatelessWidget {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
+               builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
             ),
           );
         },

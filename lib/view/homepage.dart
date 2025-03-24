@@ -63,7 +63,7 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Hi ${widget.user.username}!",
+                       "Hi ${widget.user.username}!",
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     Text("Good morning, what will you do today?",

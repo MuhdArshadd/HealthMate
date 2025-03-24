@@ -52,7 +52,7 @@ class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
-
+    
     final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     final List<double> glucoseData = showLast7Days ? last7DaysData : _groupDataByWeekday(last1MonthData);
@@ -214,7 +214,7 @@ class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
+             builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
             ),
           );
         },

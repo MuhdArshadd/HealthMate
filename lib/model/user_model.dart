@@ -9,12 +9,12 @@ class UserModel {
   final String? message;
 
   UserModel({
-    required this.userId,
+     required this.userId,
     required this.username,
     required this.email,
     this.imageUrl,
     required this.isGoogleUser,
-    this.message,
+    this.message, 
   });
 
   factory UserModel.fromDatabase(Map<String, dynamic> data) {
@@ -28,3 +28,5 @@ class UserModel {
   }
 
 }
+
+

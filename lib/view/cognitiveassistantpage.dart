@@ -23,7 +23,7 @@ class _CognitiveAssistantPageState extends State<CognitiveAssistantPage> {
   @override
   Widget build(BuildContext context) {
 
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
+        final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     return Scaffold(
       appBar: CustomAppBar(),
@@ -154,7 +154,7 @@ class _CognitiveAssistantPageState extends State<CognitiveAssistantPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
+ builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
             ),
           );
         },

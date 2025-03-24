@@ -7,9 +7,9 @@ import '../model/user_model.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int selectedIndex;
-  final UserModel user;
+  final UserModel user; 
 
-  const MainNavigationScreen({super.key, this.selectedIndex = 0, required this.user});
+    const MainNavigationScreen({super.key, this.selectedIndex = 0, required this.user});
 
   @override
   _MainNavigationScreenState createState() => _MainNavigationScreenState();
@@ -39,7 +39,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     ];
 
     return Scaffold(
-      body: _pages[_selectedIndex],
+      body: _pages[_selectedIndex], 
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onNavTapped,

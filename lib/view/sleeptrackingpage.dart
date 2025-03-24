@@ -30,14 +30,14 @@ class _SleepTrackingPageState extends State<SleepTrackingPage> {
 
   final List<String> daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-  void _showAddSleepEntryDialog() {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
-
-    showDialog(
-      context: context,
-      builder: (context) => AddSleepEntryDialog(user: user!),
-    );
-  }
+void _showAddSleepEntryDialog() {
+  final user = Provider.of<AuthProvider>(context, listen: false).user;
+  
+  showDialog(
+    context: context,
+    builder: (context) => AddSleepEntryDialog(user: user!), 
+  );
+}
 
   // Function for grouping last 1 month data by weekday (cumulative sum per weekday)
   List<double> _groupDataByWeekday(List<double> monthData) {
