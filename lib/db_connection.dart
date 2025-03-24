@@ -5,7 +5,7 @@ class DatabaseConnection {
   late PostgreSQLConnection connection;
 
   Future<String> connectToDatabase() async {
-    await dotenv.load();  // Ensure .env is loaded
+    await dotenv.load();  // Ensure ..env is loaded
 
     String host = dotenv.get('DB_HOST');
     int port = int.parse(dotenv.get('DB_PORT'));
@@ -14,11 +14,11 @@ class DatabaseConnection {
     String password = dotenv.get('DB_PASSWORD');
 
     connection = PostgreSQLConnection(
-      host,  // host from .env
-      port,  // port from .env
-      dbName, // database name from .env
-      username: username, // username from .env
-      password: password, // password from .env
+      host,  // host from ..env
+      port,  // port from ..env
+      dbName, // database name from ..env
+      username: username, // username from ..env
+      password: password, // password from ..env
       useSSL: true, // SSL enabled
     );
 

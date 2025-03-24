@@ -7,84 +7,87 @@ import '../../db_connection.dart';
 class UserController {
   final DatabaseConnection dbConnection = DatabaseConnection();
 
-Future<String> signUp(
-    String? noIc,
-    String fullName,
-    String email,
-    String password,
-    String confirmPassword,
-    Uint8List? profileImage) async {
-  await dbConnection.connectToDatabase();
+  Future<String> signUp(
+      String? noIc,
+      String fullName,
+      String email_address,
+      String password,
+      String confirmPassword,
+      Uint8List? profileImage) async {
 
-  try {
-    // Check if email or username already exists
-    var existingUser = await dbConnection.connection.query(
-      "SELECT email, username FROM users WHERE email = @email OR username = @username",
-      substitutionValues: {'email': email, 'username': fullName},
-    );
+    try {
+      await dbConnection.connectToDatabase();
 
-    if (existingUser.isNotEmpty) {
-      for (var row in existingUser) {
-        if (row[0] == email) {
-          return "Error: Email already exists.";
-        }
-        if (row[1] == fullName) {
-          return "Error: Username already exists.";
+      // Check if email or username already exists
+      var existingUser = await dbConnection.connection.query(
+        'SELECT "email_address", "username" FROM users WHERE "email_address" = @email_address OR "username" = @username',
+        substitutionValues: {'email_address': email_address, 'username': fullName},
+      );
+
+      if (existingUser.isNotEmpty) {
+        for (var row in existingUser) {
+          if (row[0] == email_address) {
+            return "Error: Email already exists.";
+          }
+          if (row[1] == fullName) {
+            return "Error: Username already exists.";
+          }
         }
       }
-    }
 
-    if (password != confirmPassword) {
-      return "Error: Passwords do not match.";
-    }
+      if (password != confirmPassword) {
+        return "Error: Passwords do not match.";
+      }
 
-    String hashedPassword = hashPassword(password);
+      String hashedPassword = hashPassword(password);
 
-    if (profileImage != null) {
-      final base64Image = base64Encode(profileImage);
+      if (profileImage != null) {
+        final base64Image = base64Encode(profileImage);
 
-      await dbConnection.connection.query(
-        '''
-        INSERT INTO users (user_ic, username, email, password, image_url) 
-        VALUES (@user_ic, @username, @email, @password, decode(@profile_image, 'base64'))
+        print("DEBUG: Preparing to insert user into database (with image)...");
+        await dbConnection.connection.query(
+          '''
+        INSERT INTO users ("username", "email_address", "password", "image_url") 
+        VALUES (@username, @email_address, @password, decode(@profile_image, 'base64'))
         ''',
-        substitutionValues: {
-          'user_ic': noIc,
-          'username': fullName,
-          'email': email,
-          'password': hashedPassword,
-          'profile_image': base64Image
-        },
-      );
-    } else {
-      await dbConnection.connection.query(
-        '''
-        INSERT INTO users (user_ic, username, email, password, image_url) 
-        VALUES (@user_ic, @username, @email, @password, NULL)
+          substitutionValues: {
+            'username': fullName,
+            'email_address': email_address,
+            'password': hashedPassword,
+            'profile_image': base64Image
+          },
+        );
+      } else {
+        await dbConnection.connection.query(
+          '''
+        INSERT INTO users ("username", "email_address", "password", "image_url") 
+        VALUES (@username, @email_address, @password, NULL)
         ''',
-        substitutionValues: {
-          'user_ic': noIc,
-          'username': fullName,
-          'email': email,
-          'password': hashedPassword,
-        },
-      );
-    }
+          substitutionValues: {
+            'username': fullName,
+            'email_address': email_address,
+            'password': hashedPassword,
+          },
+        );
+      }
 
-    return "Sign up successful";
-  } catch (e) {
-    return "Error signing up: $e";
-  } finally {
-    dbConnection.closeConnection();
+
+      return "Sign up successful";
+
+    } catch (e) {
+      return "Error signing up: $e";
+    } finally {
+      dbConnection.closeConnection();
+    }
   }
-}
+
 
 Future<String> login(String username, String password) async {
   await dbConnection.connectToDatabase();
 
   try {
     var result = await dbConnection.connection.query(
-      "SELECT password, isgoogle FROM users WHERE email = @username OR username = @username",
+      "SELECT password, isgoogle FROM users WHERE email_address = @username OR username = @username",
       substitutionValues: {'username': username},
     );
 
@@ -129,8 +132,8 @@ Future<String> handleGoogleSignIn(String displayName, String email, String? phot
   try {
 
     var result = await dbConnection.connection.query(
-      "SELECT username FROM users WHERE email = @email",
-      substitutionValues: {'email': email},
+      "SELECT username FROM users WHERE email_address = @email_address",
+      substitutionValues: {'email_address': email},
     );
     
     if (result.isEmpty) {
@@ -143,36 +146,36 @@ Future<String> handleGoogleSignIn(String displayName, String email, String? phot
           
           await dbConnection.connection.query(
             '''
-            INSERT INTO users (user_ic, username, email, password, image_url, isgoogle) 
-            VALUES (NULL, @username, @email, NULL, decode(@profile_image, 'base64'), TRUE)
+            INSERT INTO users (username, email_address, password, image_url, isgoogle) 
+            VALUES (@username, @email_address, NULL, decode(@profile_image, 'base64'), TRUE)
             ''',
             substitutionValues: {
               'username': displayName,
-              'email': email,
+              'email_address': email,
               'profile_image': base64Image
             },
           );
         } catch (e) {
           await dbConnection.connection.query(
             '''
-            INSERT INTO users (user_ic, username, email, password, isgoogle) 
-            VALUES (NULL, @username, @email, NULL, TRUE)
+            INSERT INTO users (username, email_address, password, isgoogle) 
+            VALUES (@username, @email_address, NULL, TRUE)
             ''',
             substitutionValues: {
               'username': displayName,
-              'email': email,
+              'email_address': email,
             },
           );
         }
       } else {
         await dbConnection.connection.query(
           '''
-          INSERT INTO users (user_ic, username, email, password, isgoogle) 
-          VALUES (NULL, @username, @email, NULL, TRUE)
+          INSERT INTO users (username, email_address, password, isgoogle) 
+          VALUES (@username, @email_address, NULL, TRUE)
           ''',
           substitutionValues: {
             'username': displayName,
-            'email': email,
+            'email_address': email,
           },
         );
       }
@@ -181,8 +184,8 @@ Future<String> handleGoogleSignIn(String displayName, String email, String? phot
     } else {
       // For existing users, update the isgoogle flag if needed
       await dbConnection.connection.query(
-        "UPDATE users SET isgoogle = TRUE WHERE email = @email AND (isgoogle IS NULL OR isgoogle = FALSE)",
-        substitutionValues: {'email': email},
+        "UPDATE users SET isgoogle = TRUE WHERE email_address = @email_address AND (isgoogle IS NULL OR isgoogle = FALSE)",
+        substitutionValues: {'email_address': email},
       );
       
       return "Login Successful"; 

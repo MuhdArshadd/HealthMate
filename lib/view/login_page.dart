@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../controller/user_controller.dart';
 import 'forgot_password.dart';
 import 'main_navigation_screen.dart';
-import 'package:healthmate/controller/user_controller.dart';
 import 'package:provider/provider.dart';
-import 'package:healthmate/AuthProvider/Auth_provider.dart' as local_auth;
+import '../AuthProvider/Auth_provider.dart' as local_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 
 
@@ -70,7 +70,7 @@ void googleSignIn() async {
                   Navigator.pop(context);
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+                    MaterialPageRoute(builder: (context) => MainNavigationScreen()),
                   );
                 },
                 child: const Text("OK"),
@@ -168,7 +168,7 @@ void googleSignIn() async {
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const MainNavigationScreen()),
+                      builder: (context) => MainNavigationScreen()),
                 );
               },
               child: const Text("OK"),

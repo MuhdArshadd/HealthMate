@@ -1,0 +1,2 @@
+[libraries]
+desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version = "2.0.3" }

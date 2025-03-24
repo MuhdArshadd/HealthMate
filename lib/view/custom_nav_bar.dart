@@ -5,10 +5,9 @@ class CustomBottomNavBar extends StatefulWidget {
   final int currentIndex;
   final Function(int) onTap;
 
-  const CustomBottomNavBar({super.key, required this.currentIndex, required this.onTap});
+  CustomBottomNavBar({required this.currentIndex, required this.onTap});
 
   @override
-  // ignore: library_private_types_in_public_api
   _CustomBottomNavBarState createState() => _CustomBottomNavBarState();
 }
 
@@ -46,7 +45,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
         _positionX = newPosition;
       });
 
-      Future.delayed(const Duration(milliseconds: 200), () {
+      Future.delayed(Duration(milliseconds: 200), () {
         if (mounted) {
           setState(() {
             _iconOpacity = 1.0; // Fade in icon after reaching target
@@ -67,7 +66,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
       children: [
         Container(
           height: 80,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: Color(0xFF3674B5),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
@@ -84,7 +83,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
           ),
         ),
         AnimatedPositioned(
-          duration: const Duration(milliseconds: 300),
+          duration: Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           left: _positionX,
           top: -20,
@@ -101,7 +100,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: Colors.white, size: 30),
-          const SizedBox(height: 5),
+          SizedBox(height: 5),
           Text(
             label,
             style: GoogleFonts.poppins(
@@ -122,28 +121,32 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
         ? Icons.chat
         : Icons.person;
 
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFF3674B5), width: 4),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 5,
-            offset: Offset(0, 2),
+    return GestureDetector(
+      onTap: () => widget.onTap(index), // Make the floating item clickable
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: Color(0xFF3674B5), width: 4),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 5,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: AnimatedOpacity(
+            duration: Duration(milliseconds: 100), // Faster disappearance
+            opacity: _iconOpacity,
+            child: Icon(icon, color: Color(0xFF3674B5), size: 30),
           ),
-        ],
-      ),
-      child: Center(
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 100), // Faster disappearance
-          opacity: _iconOpacity,
-          child: Icon(icon, color: const Color(0xFF3674B5), size: 30),
         ),
       ),
     );
   }
+
 }
