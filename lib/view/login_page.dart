@@ -6,7 +6,7 @@ import 'main_navigation_screen.dart';
 import 'package:provider/provider.dart';
 import '../AuthProvider/Auth_provider.dart' as local_auth;
 import 'package:google_sign_in/google_sign_in.dart';
-
+import "../model/user_model.dart";
 
 import 'signup_form.dart';
 // import 'homepage.dart';
@@ -49,13 +49,14 @@ void googleSignIn() async {
       final String email = user.email;
       final String? photoUrl = user.photoUrl;
 
-      String response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
+      UserModel? response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      if (response == "Login Successful" || response.contains("New user created")) {
-        Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+     if (response != null) {
+        // Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+        Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
               print(
           "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
 
@@ -70,7 +71,9 @@ void googleSignIn() async {
                   Navigator.pop(context);
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => MainNavigationScreen()),
+                    MaterialPageRoute(
+                  builder: (context) => MainNavigationScreen(user: response), 
+                ),
                   );
                 },
                 child: const Text("OK"),
@@ -83,7 +86,7 @@ void googleSignIn() async {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text("Error"),
-            content: Text(response),
+            content: Text(response?.message ?? "An unknown error occurred."),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -144,15 +147,15 @@ void googleSignIn() async {
 
     setState(() => _isLoading = true);
 
-    String response = await _userController.login(username, password);
+    UserModel? response = await _userController.login(username, password);
 
     if (!mounted) return;
 
     setState(() => _isLoading = false);
 
-    if (response == "Login Successful") {
+    if (response != null) {
       print("Login Successful: User $username has logged in.");
-      Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+      Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
       print(
           "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
 
@@ -167,8 +170,9 @@ void googleSignIn() async {
                 Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => MainNavigationScreen()),
+                   MaterialPageRoute(
+                  builder: (context) => MainNavigationScreen(user: response), 
+                ),
                 );
               },
               child: const Text("OK"),
@@ -182,7 +186,7 @@ void googleSignIn() async {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("Error"),
-          content: Text(response),
+          content: Text(response?.message ?? "An unknown error occurred."),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),

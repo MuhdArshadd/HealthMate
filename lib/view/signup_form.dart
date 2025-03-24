@@ -4,6 +4,7 @@ import 'main_navigation_screen.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import '../AuthProvider/Auth_provider.dart' as local_auth;
+import "../model/user_model.dart";
 // import 'login_page.dart';
 
 class SignUpForm extends StatefulWidget {
@@ -42,13 +43,13 @@ void googleSignIn() async {
       final String email = user.email;
       final String? photoUrl = user.photoUrl;
 
-      String response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
+      UserModel? response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      if (response == "Login Successful" || response.contains("New user created")) {
-        Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+          if (response != null) {
+        Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
               print(
           "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
 
@@ -63,7 +64,9 @@ void googleSignIn() async {
                   Navigator.pop(context);
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => MainNavigationScreen()),
+                     MaterialPageRoute(
+                  builder: (context) => MainNavigationScreen(user: response), 
+                ),
                   );
                 },
                 child: const Text("OK"),
@@ -76,7 +79,7 @@ void googleSignIn() async {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text("Error"),
-            content: Text(response),
+            content: Text(response?.message ?? "An unknown error occurred."),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),

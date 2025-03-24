@@ -6,12 +6,19 @@ import '../../../view/main_navigation_screen.dart';
 import '../../utils/constants.dart';
 import '../widgets/game_options.dart';
 
+import 'package:provider/provider.dart';
+import '../../../AuthProvider/Auth_provider.dart';
+import "../../../model/user_model.dart";
+
 
 class StartUpPage extends StatelessWidget {
   const StartUpPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+
+        final user = Provider.of<AuthProvider>(context, listen: false).user;
+
     return Scaffold(
       appBar: CustomAppBar(),
       body: SafeArea(
@@ -41,7 +48,7 @@ class StartUpPage extends StatelessWidget {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainNavigationScreen(selectedIndex: index),
+               builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
             ),
           );
         },

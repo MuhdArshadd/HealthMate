@@ -5,6 +5,10 @@ import 'custom_nav_bar.dart';
 import 'main_navigation_screen.dart';
 import 'sleep_popup.dart';
 
+import 'package:provider/provider.dart';
+import '../AuthProvider/Auth_provider.dart';
+import "../model/user_model.dart";
+
 class SleepTrackingPage extends StatefulWidget {
   @override
   _SleepTrackingPageState createState() => _SleepTrackingPageState();
@@ -26,12 +30,14 @@ class _SleepTrackingPageState extends State<SleepTrackingPage> {
 
   final List<String> daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-  void _showAddSleepEntryDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AddSleepEntryDialog(),
-    );
-  }
+void _showAddSleepEntryDialog() {
+  final user = Provider.of<AuthProvider>(context, listen: false).user;
+  
+  showDialog(
+    context: context,
+    builder: (context) => AddSleepEntryDialog(user: user!), 
+  );
+}
 
   // Function for grouping last 1 month data by weekday (cumulative sum per weekday)
   List<double> _groupDataByWeekday(List<double> monthData) {
@@ -55,6 +61,9 @@ class _SleepTrackingPageState extends State<SleepTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
+
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+
     final List<double> sleepData = showLast7Days ? last7DaysData : _groupDataByWeekday(last1MonthData);
     final double maxSleepHours = sleepData.isNotEmpty ? sleepData.reduce((a, b) => a > b ? a : b) : 10;
     final double averageSleep = sleepData.isNotEmpty ? (sleepData.reduce((a, b) => a + b) / sleepData.length) : 0.0;
@@ -225,7 +234,7 @@ class _SleepTrackingPageState extends State<SleepTrackingPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MainNavigationScreen(selectedIndex: index),
+              builder: (context) => MainNavigationScreen(user: user!, selectedIndex: index),
             ),
           );
         },

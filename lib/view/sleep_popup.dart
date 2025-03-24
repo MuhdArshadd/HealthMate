@@ -1,33 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import "../model/user_model.dart";
+import '../controller/sleep_tracking_controller.dart';
+
 class AddSleepEntryDialog extends StatefulWidget {
+  final UserModel user; 
+
+  const AddSleepEntryDialog({Key? key, required this.user}) : super(key: key);
+
   @override
   _AddSleepEntryDialogState createState() => _AddSleepEntryDialogState();
 }
 
 class _AddSleepEntryDialogState extends State<AddSleepEntryDialog> {
   final TextEditingController _sleepHoursController = TextEditingController();
+  final SleepTrackingController _sleepTrackingController = SleepTrackingController();
 
-  void _submitSleepEntry() {
-    String enteredValue = _sleepHoursController.text.trim();
+void _submitSleepEntry() async {
+  String enteredValue = _sleepHoursController.text.trim();
 
-    // Validate input: must not be empty and must be a valid number
-    if (enteredValue.isEmpty) {
-      _showSnackbar("Please enter sleep hours.");
-      return;
-    }
-
-    final double? sleepHours = double.tryParse(enteredValue);
-    if (sleepHours == null || sleepHours <= 0 || sleepHours > 24) {
-      _showSnackbar("Enter a valid number for sleep hours.");
-      return;
-    }
-
-    // Success: Process sleep data (e.g., store it)
-    print("Sleep hours entered: $sleepHours");
-    Navigator.of(context).pop();
+  if (enteredValue.isEmpty) {
+    _showSnackbar("Please enter sleep hours.");
+    return;
   }
+
+  final double? sleepHours = double.tryParse(enteredValue);
+  if (sleepHours == null || sleepHours <= 0 || sleepHours > 24) {
+    _showSnackbar("Enter a valid number for sleep hours.");
+    return;
+  }
+
+  try {
+    String result = await _sleepTrackingController.submitSleepData(
+      widget.user.userId, 
+      sleepHours,
+      false, // isWearable (automatically handled in DB)
+      null, // No need to send sleepStart
+      null  // No need to send sleepEnd
+    );
+
+    _showSnackbar(result);
+
+    if (result.contains('successfully')) {
+      Navigator.of(context).pop();
+    }
+  } catch (e) {
+    _showSnackbar('Error submitting sleep data: $e');
+  }
+}
+
+
 
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

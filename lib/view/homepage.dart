@@ -8,10 +8,16 @@ import 'custom_app_bar.dart';
 import 'glucosetrackingpage.dart';
 import 'sleeptrackingpage.dart';
 import 'languagebar.dart';
+import "../model/user_model.dart";
 
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+
+  final UserModel user;
+
+  const HomePage({super.key, required this.user});
+
+
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -22,6 +28,7 @@ class _HomePageState extends State<HomePage> {
 
   final double lessThan6Hours = 100; // Example values
   final double moreThan7Hours = 200;
+
 
   void _onItemTapped(int index) {
     setState(() {
@@ -54,9 +61,9 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      "Hi Kaneemi!",
+                       "Hi ${widget.user.username}!",
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     Text("Good morning, what will you do today?",
