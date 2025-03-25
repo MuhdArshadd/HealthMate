@@ -31,9 +31,12 @@ class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
   final List<String> daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   void _showAddGlucoseEntryDialog() {
+
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+
     showDialog(
       context: context,
-      builder: (context) => AddGlucoseEntryDialog(),
+      builder: (context) => AddGlucoseEntryDialog(user: user!),
     );
   }
 

@@ -1,32 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import "../model/user_model.dart";
+import '../controller/glucose_tracking_controller.dart';
+
 class AddGlucoseEntryDialog extends StatefulWidget {
+  final UserModel user; 
+
+    const AddGlucoseEntryDialog({Key? key, required this.user}) : super(key: key);
+
   @override
   _AddGlucoseEntryDialogState createState() => _AddGlucoseEntryDialogState();
 }
 
 class _AddGlucoseEntryDialogState extends State<AddGlucoseEntryDialog> {
-  final TextEditingController _glucoseIntakeController = TextEditingController();
+final TextEditingController _glucoseIntakeController = TextEditingController();
+final GlucoseTrackingController _glucoseTrackingController = GlucoseTrackingController();
 
-  void _submitGlucoseEntry() {
+
+  void _submitGlucoseEntry() async {
     String enteredValue = _glucoseIntakeController.text.trim();
 
-    // Validate input: must not be empty and must be a valid number
     if (enteredValue.isEmpty) {
-      _showSnackbar("Please enter sleep hours.");
+      _showSnackbar("Please enter glucose level.");
       return;
     }
 
     final double? glucoseIntake = double.tryParse(enteredValue);
     if (glucoseIntake == null || glucoseIntake <= 0) {
-      _showSnackbar("Enter a valid number for sleep hours.");
+     _showSnackbar("Enter a valid number for glucose level.");
       return;
     }
 
-    // Success: Process sleep data (e.g., store it)
-    print("Sleep hours entered: $glucoseIntake");
-    Navigator.of(context).pop();
+    try {
+
+      String result = await _glucoseTrackingController.submitGlucoseData(
+      widget.user.userId,
+      glucoseIntake,
+      false
+      );
+
+      _showSnackbar(result);
+
+    if (result.contains('successfully')) {
+         print("Glucose level entered: $glucoseIntake");
+      Navigator.of(context).pop();
+    }
+
+    }catch(e){
+       _showSnackbar('Error submitting sleep data: $e');
+    }
+
+
   }
 
   void _showSnackbar(String message) {

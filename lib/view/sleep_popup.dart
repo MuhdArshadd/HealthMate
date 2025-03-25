@@ -35,9 +35,9 @@ void _submitSleepEntry() async {
     String result = await _sleepTrackingController.submitSleepData(
       widget.user.userId, 
       sleepHours,
-      false, // isWearable (automatically handled in DB)
-      null, // No need to send sleepStart
-      null  // No need to send sleepEnd
+      false, 
+      null, 
+      null  
     );
 
     _showSnackbar(result);
