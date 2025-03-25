@@ -54,9 +54,15 @@ class _HomePageState extends State<HomePage> {
             // Greeting Section
             Row(
               children: [
-                const CircleAvatar(
-                  backgroundImage: AssetImage("assets/user.png"), // Replace with actual image
+                CircleAvatar(
                   radius: 30,
+                  backgroundImage: widget.user.imageByte != null
+                      ? MemoryImage(widget.user.imageByte!) // Display profile picture if available
+                      : null,
+
+                  child: widget.user.imageByte == null
+                      ? const Icon(Icons.person, size: 30, color: Colors.white) // Default icon
+                      : null,
                 ),
                 const SizedBox(width: 12),
                 Column(

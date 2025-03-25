@@ -21,106 +21,99 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final DraggableScrollableController _forgotPasswordController =
-      DraggableScrollableController();
-
-  final DraggableScrollableController _sheetController =
-      DraggableScrollableController();
+  final DraggableScrollableController _forgotPasswordController = DraggableScrollableController();
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
   final UserController _userController = UserController();
+  GoogleSignIn signIn = GoogleSignIn();
 
   bool _isLoading = false;
   bool _isPasswordVisible = false;
 
+  void googleSignIn() async {
+    setState(() => _isLoading = true);
 
-GoogleSignIn signIn = GoogleSignIn();
+    try {
+      await signIn.signOut();
+      final user = await signIn.signIn();
 
-void googleSignIn() async {
-  setState(() => _isLoading = true);
+      if (user != null) {
+        print("Sign in successful!");
+        print("User data: $user");
 
-  try {
-    await signIn.signOut(); 
-    final user = await signIn.signIn();
+        final String displayName = user.displayName ?? "User";
+        final String email = user.email;
 
-    if (user != null) {
-      print("Sign in successful!");
-      print("User data: $user");
+        UserModel? response = await _userController.handleGoogleSignIn(displayName, email);
 
-      final String displayName = user.displayName ?? "User";
-      final String email = user.email;
-      final String? photoUrl = user.photoUrl;
+        if (!mounted) return;
+        setState(() => _isLoading = false);
 
-      UserModel? response = await _userController.handleGoogleSignIn(displayName, email, photoUrl);
+        if (response != null) {
+          // Provider.of<local_auth.AuthProvider>(context, listen: false).login();
+          Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
+          print("AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
+
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Success"),
+              content: const Text("Google Sign-In Successful!"),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            MainNavigationScreen(user: response),
+                      ),
+                    );
+                  },
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        } else {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Error"),
+              content: Text(response?.message ?? "An unknown error occurred."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("OK"),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        setState(() => _isLoading = false);
+        print("Sign in canceled or failed");
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      print("Sign in failed with error: $e");
 
       if (!mounted) return;
-      setState(() => _isLoading = false);
-
-     if (response != null) {
-        // Provider.of<local_auth.AuthProvider>(context, listen: false).login();
-        Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
-              print(
-          "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
-
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Success"),
-            content: const Text("Google Sign-In Successful!"),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                  builder: (context) => MainNavigationScreen(user: response), 
-                ),
-                  );
-                },
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
-      } else {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Error"),
-            content: Text(response?.message ?? "An unknown error occurred."),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
-      }
-    } else {
-      setState(() => _isLoading = false);
-      print("Sign in canceled or failed");
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Error"),
+          content: Text("Sign in failed: $e"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
     }
-  } catch (e) {
-    setState(() => _isLoading = false);
-    print("Sign in failed with error: $e");
-
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Error"),
-        content: Text("Sign in failed: $e"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  } 
-}
-
+  }
 
   void _login() async {
     String username = _usernameController.text;
@@ -156,8 +149,7 @@ void googleSignIn() async {
     if (response != null) {
       print("Login Successful: User $username has logged in.");
       Provider.of<local_auth.AuthProvider>(context, listen: false).login(response);
-      print(
-          "AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
+      print("AuthProvider State: Logged in -> ${Provider.of<local_auth.AuthProvider>(context, listen: false).isLoggedIn}");
 
       showDialog(
         context: context,
@@ -170,9 +162,9 @@ void googleSignIn() async {
                 Navigator.pop(context);
                 Navigator.pushReplacement(
                   context,
-                   MaterialPageRoute(
-                  builder: (context) => MainNavigationScreen(user: response), 
-                ),
+                  MaterialPageRoute(
+                    builder: (context) => MainNavigationScreen(user: response),
+                  ),
                 );
               },
               child: const Text("OK"),
@@ -229,7 +221,7 @@ void googleSignIn() async {
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(40)),
+                    BorderRadius.vertical(top: Radius.circular(40)),
                   ),
                   child: SingleChildScrollView(
                     child: Center(
@@ -320,23 +312,23 @@ void googleSignIn() async {
                             _isLoading
                                 ? const CircularProgressIndicator()
                                 : ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.black,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 143, vertical: 15),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                    ),
-                                    onPressed: _login,
-                                    child: const Text(
-                                      "LOG IN",
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          color: Colors.white,
-                                          fontFamily: 'Inter'),
-                                    ),
-                                  ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 143, vertical: 15),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              onPressed: _login,
+                              child: const Text(
+                                "LOG IN",
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
+                                    fontFamily: 'Inter'),
+                              ),
+                            ),
                             const SizedBox(height: 10),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.end,
@@ -351,7 +343,7 @@ void googleSignIn() async {
                                     _sheetController.animateTo(
                                       0.8,
                                       duration:
-                                          const Duration(milliseconds: 300),
+                                      const Duration(milliseconds: 300),
                                       curve: Curves.easeOut,
                                     );
                                   },
