@@ -1,9 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:healthmate/model/user_model.dart';
 import '../controller/chatbot_controller.dart';
 import 'custom_app_bar.dart';
 
 class ChatbotPage extends StatefulWidget {
+  final UserModel user;
+
+  const ChatbotPage({super.key, required this.user});
+
   @override
   _ChatbotPageState createState() => _ChatbotPageState();
 }
@@ -47,7 +52,7 @@ class _ChatbotPageState extends State<ChatbotPage> {
       _controller.clear();
 
       try {
-        String response = await openAIService.runConversation(message);
+        String response = await openAIService.runConversation(widget.user.userId, message);
         setState(() {
           _messages.add({'role': 'system', 'content': response});
           isLoading = false;

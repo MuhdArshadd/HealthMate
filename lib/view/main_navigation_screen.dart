@@ -34,7 +34,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final List<Widget> _pages = [
       HomePage(user: widget.user),
-      ChatbotPage(),
+      ChatbotPage(user: widget.user),
       ProfilePage(user: widget.user),
     ];
 
