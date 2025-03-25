@@ -2,10 +2,15 @@ import 'package:postgres/postgres.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class DatabaseConnection {
-  late PostgreSQLConnection connection;
+  PostgreSQLConnection? _connection;
+  bool _isConnected = false;
 
-  Future<String> connectToDatabase() async {
-    await dotenv.load();  // Ensure ..env is loaded
+  DatabaseConnection() {
+    connectToDatabase();
+  }
+
+  Future<void> connectToDatabase() async {
+    await dotenv.load();
 
     String host = dotenv.get('DB_HOST');
     int port = int.parse(dotenv.get('DB_PORT'));
@@ -13,24 +18,39 @@ class DatabaseConnection {
     String username = dotenv.get('DB_USER');
     String password = dotenv.get('DB_PASSWORD');
 
-    connection = PostgreSQLConnection(
-      host,  // host from ..env
-      port,  // port from ..env
-      dbName, // database name from ..env
-      username: username, // username from ..env
-      password: password, // password from ..env
-      useSSL: true, // SSL enabled
-    );
+    if (!_isConnected || _connection == null || _connection!.isClosed) {
+      _connection = PostgreSQLConnection(
+        host,
+        port,
+        dbName,
+        username: username,
+        password: password,
+        useSSL: true,
+      );
 
-    try {
-      await connection.open();
-      return "Connected to database";
-    } catch (e) {
-      return "Failed to connect to database: $e";
+      try {
+        await _connection!.open();
+        _isConnected = true;
+        print("Connected to the database");
+      } catch (e) {
+        print("Failed to connect to database: $e");
+        throw Exception("Database connection failed");
+      }
     }
   }
 
-  void closeConnection() {
-    connection.close();
+  PostgreSQLConnection get connection {
+    if (_connection == null) {
+      throw Exception("Database connection is not initialized.");
+    }
+    return _connection!;
+  }
+
+  Future<void> closeConnection() async {
+    if (_isConnected && _connection != null) {
+      await _connection!.close();
+      _isConnected = false;
+      print("Database connection closed");
+    }
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:healthmate/controller/cognitivegames_tracking_controller.dart';
 import '../cognitivegames/ui/pages/startup_page.dart';
 import 'custom_app_bar.dart';
 import 'custom_nav_bar.dart';
@@ -13,17 +14,40 @@ import '../AuthProvider/Auth_provider.dart';
 import "../model/user_model.dart";
 
 class CognitiveAssistantPage extends StatefulWidget {
+
+
   @override
   _CognitiveAssistantPageState createState() => _CognitiveAssistantPageState();
 }
 
 class _CognitiveAssistantPageState extends State<CognitiveAssistantPage> {
-  int currentStreak = 5;
+
+  final CognitivegamesTrackingController cognitivegamesTrackingController = CognitivegamesTrackingController();
+  Future<Map<String, dynamic>>? streakData;
+
+  @override
+  void initState() {
+    super.initState();
+
+    Future.delayed(Duration.zero, () {
+      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      if (user != null) {
+        setState(() {
+          streakData = cognitivegamesTrackingController.getStreakData(user.userId);
+        });
+      } else {
+        streakData = Future.value({
+          'current_streak': 0,
+          'longest_streak': 0,
+          'last_played_date': null
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-
-        final user = Provider.of<AuthProvider>(context, listen: false).user;
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     return Scaffold(
       appBar: CustomAppBar(),
@@ -103,46 +127,70 @@ class _CognitiveAssistantPageState extends State<CognitiveAssistantPage> {
                 ],
               ),
             ),
+            // Streak Data & Start Button
+            FutureBuilder<Map<String, dynamic>>(
+              future: streakData,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Text("Error fetching streak data");
+                }
 
-            // Streak and Start button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Current Streak: Day $currentStreak',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      //Go to game page or start game logic
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => StartUpPage(),
+                var data = snapshot.data!;
+                int currentStreak = data['current_streak'];
+                int longestStreak = data['longest_streak'];
+                DateTime? lastPlayedDate = data['last_played_date'];
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Current Streak: Day $currentStreak',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Longest Streak: Day $longestStreak',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'Last Played: ${lastPlayedDate != null ? lastPlayedDate.toString().split(' ')[0] : "Never"}',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                      ),
+                      SizedBox(height: 12),
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            // Update streak data before navigating to game page
+                            await cognitivegamesTrackingController
+                                .updateStreakData(user!.userId);
+                            // Navigate to game page
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => StartUpPage()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD3E0E3),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Text(
+                            'START',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+                          ),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD3E0E3),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
                       ),
-                    ),
-                    child: Text(
-                      'START',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),
