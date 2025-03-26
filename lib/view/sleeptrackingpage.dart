@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'custom_app_bar.dart';
 import 'custom_nav_bar.dart';
 import 'main_navigation_screen.dart';
 import 'sleep_popup.dart';
 
-import 'package:provider/provider.dart';
 import '../AuthProvider/Auth_provider.dart';
-import "../model/user_model.dart";
+import '../model/user_model.dart';
+import '../controller/sleep_tracking_controller.dart';
+
+import 'barchart/last1month.dart';
+import 'barchart/last7days.dart';
 
 class SleepTrackingPage extends StatefulWidget {
   @override
@@ -16,28 +20,71 @@ class SleepTrackingPage extends StatefulWidget {
 
 class _SleepTrackingPageState extends State<SleepTrackingPage> {
   bool showLast7Days = true; // Default to "Last 7 Days"
-
-  // Sample sleep data
-  final List<double> last7DaysData = [5.2, 6.5, 4.8, 8.0, 5.3, 3.5, 7.2];
-
-  final List<double> last1MonthData = [
-    4.5, 6.0, 7.5, 5.2, 3.8, 6.7, 4.9,
-    5.1, 7.2, 4.3, 6.8, 5.6, 8.0, 5.9,
-    3.7, 7.0, 4.2, 6.3, 5.8, 4.6, 7.1,
-    5.0, 6.9, 4.4, 5.5, 6.2, 4.7, 6.1,
-    7.4, 5.7
-  ];
+  List<double> last7DaysData = List.filled(7, 0.0);
+  List<double> last1MonthData = List.filled(30, 0.0);
+  bool _isLoading = true;
 
   final List<String> daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-void _showAddSleepEntryDialog() {
-  final user = Provider.of<AuthProvider>(context, listen: false).user;
-  
-  showDialog(
-    context: context,
-    builder: (context) => AddSleepEntryDialog(user: user!), 
-  );
+  final SleepTrackingController _sleepTrackingController = SleepTrackingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSleepData();
+  }
+
+  Future<void> _fetchSleepData() async {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    
+    if (user != null) {
+      try {
+        // Fetch last 7 days sleep data
+        List<Map<String, dynamic>> sleepData = await _sleepTrackingController.getLast7DaysSleepData(user.userId);
+        
+        setState(() {
+          // Map the fetched data to last7DaysData
+          last7DaysData = List.filled(7, 0.0);
+          for (var data in sleepData) {
+            int index = _getDayIndex(data['day_of_week']);
+            last7DaysData[index] = double.parse(data['total_sleep_hours'].toString());
+          }
+          _isLoading = false;
+        });
+      } catch (e) {
+        print("Error fetching sleep data: $e");
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+int _getDayIndex(String dayOfWeek) {
+  switch (dayOfWeek) {
+    case 'M': return 0;
+    case 'Tu': return 1; // Tuesday
+    case 'W': return 2;
+    case 'Th': return 3; // Thursday
+    case 'F': return 4;
+    case 'Sa': return 5; // Saturday
+    case 'Su': return 6; // Sunday
+    default: return 0;
+  }
 }
+
+
+  void _showAddSleepEntryDialog() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AddSleepEntryDialog(user: user!), 
+    ).then((_) {
+      // Refresh sleep data after adding a new entry
+      _fetchSleepData();
+    });
+  }
 
   // Function for grouping last 1 month data by weekday (cumulative sum per weekday)
   List<double> _groupDataByWeekday(List<double> monthData) {
@@ -61,13 +108,27 @@ void _showAddSleepEntryDialog() {
 
   @override
   Widget build(BuildContext context) {
-
     final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     final List<double> sleepData = showLast7Days ? last7DaysData : _groupDataByWeekday(last1MonthData);
-    final double maxSleepHours = sleepData.isNotEmpty ? sleepData.reduce((a, b) => a > b ? a : b) : 10;
-    final double averageSleep = sleepData.isNotEmpty ? (sleepData.reduce((a, b) => a + b) / sleepData.length) : 0.0;
-    final int highestSleepIndex = sleepData.indexOf(sleepData.reduce((a, b) => a > b ? a : b));
+  
+    // Add null check and default value handling
+    final double maxSleepHours = sleepData.isNotEmpty 
+      ? (sleepData.reduce((a, b) => a > b ? a : b) > 0 
+          ? sleepData.reduce((a, b) => a > b ? a : b) 
+          : 8.0) // Default to 8 if no positive values
+      : 10.0; // Default max if list is empty
+
+    final List<double> validSleepData = last7DaysData.where((hours) => hours > 0).toList();
+    final double averageSleep = validSleepData.isNotEmpty
+        ? validSleepData.reduce((a, b) => a + b) / validSleepData.length
+        : 0.0;
+
+
+    final int highestSleepIndex = sleepData.isNotEmpty 
+      ? sleepData.indexOf(sleepData.reduce((a, b) => a > b ? a : b)) 
+      : 0;
+
     final List<String> fullDaysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     final String highestSleepDay = fullDaysOfWeek[highestSleepIndex];
 
@@ -166,42 +227,15 @@ void _showAddSleepEntryDialog() {
                   SizedBox(height: 20),
 
                   // Bar Chart with Dynamic Scaling
-                  Container(
-                    height: 180,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: List.generate(
-                        sleepData.length,
-                            (index) {
-                          final double heightPercentage = (sleepData[index] / maxSleepHours) * 150;
-                          return Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Container(
-                                    height: heightPercentage,
-                                    width: 15,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black,
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(4),
-                                        topRight: Radius.circular(4),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 5),
-                                  Text(daysOfWeek[index % 7],
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                  showLast7Days
+                    ? Last7DaysBarChart(
+                      )
+                    : Last1MonthBarChart(
+                        sleepData: _groupDataByWeekday(last1MonthData),
+                        maxSleepHours: maxSleepHours,
+                        daysOfWeek: daysOfWeek,
                       ),
-                    ),
-                  ),
+
                 ],
               ),
             ),
