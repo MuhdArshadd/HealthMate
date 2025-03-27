@@ -38,6 +38,8 @@ class CognitivegamesTrackingController {
     } catch (e) {
       print("Error fetching streak data: $e");
       return {};
+    } finally {
+      dbConnection.closeConnection();
     }
   }
 
@@ -117,6 +119,8 @@ class CognitivegamesTrackingController {
       }
     } catch (e) {
       print("Error updating streak: $e");
+    } finally {
+      dbConnection.closeConnection();
     }
   }
 

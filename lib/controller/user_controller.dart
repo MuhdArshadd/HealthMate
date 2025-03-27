@@ -275,6 +275,8 @@ class UserController {
       }
     } catch (e) {
       print("Error updating profile: $e");
+    } finally{
+      dbConnection.closeConnection();
     }
   }
 

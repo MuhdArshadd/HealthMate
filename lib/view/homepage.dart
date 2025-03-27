@@ -305,7 +305,7 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     child: Text(
-                      "AI chatbox description",
+                      "Helpmate: Your AI-powered assistant for cardiovascular health. Get symptom insights, risk analysis, and lifestyle recommendations instantly.",
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF3674B5)),
                     ),
                   ),
@@ -313,7 +313,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             const SizedBox(height: 16),
-
           ],
         ),
       ),
