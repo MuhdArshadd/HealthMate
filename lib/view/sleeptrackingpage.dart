@@ -23,6 +23,7 @@ class _SleepTrackingPageState extends State<SleepTrackingPage> {
   List<double> last7DaysData = List.filled(7, 0.0);
   List<double> last1MonthData = List.filled(30, 0.0);
   bool _isLoading = true;
+  double _averageDailySleep = 0.0;
 
   final List<String> daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -34,31 +35,43 @@ class _SleepTrackingPageState extends State<SleepTrackingPage> {
     _fetchSleepData();
   }
 
-  Future<void> _fetchSleepData() async {
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
-    
-    if (user != null) {
-      try {
-        // Fetch last 7 days sleep data
-        List<Map<String, dynamic>> sleepData = await _sleepTrackingController.getLast7DaysSleepData(user.userId);
-        
-        setState(() {
-          // Map the fetched data to last7DaysData
-          last7DaysData = List.filled(7, 0.0);
-          for (var data in sleepData) {
-            int index = _getDayIndex(data['day_of_week']);
-            last7DaysData[index] = double.parse(data['total_sleep_hours'].toString());
-          }
-          _isLoading = false;
-        });
-      } catch (e) {
-        print("Error fetching sleep data: $e");
-        setState(() {
-          _isLoading = false;
-        });
+Future<void> _fetchSleepData() async {
+  final user = Provider.of<AuthProvider>(context, listen: false).user;
+
+  if (user != null) {
+    try {
+      List<Map<String, dynamic>> sleepData = await _sleepTrackingController.getLast7DaysSleepData(user.userId);
+      print("Last 7 Days Sleep Data: $sleepData");
+
+      double totalSleepHours = 0.0;
+      List<double> updatedLast7DaysData = List.filled(7, 0.0);
+
+      for (var data in sleepData) {
+        int index = _getDayIndex(data['day_of_week']);
+        double sleepHours = double.parse(data['total_sleep_hours'].toString());
+        updatedLast7DaysData[index] = sleepHours;
+        totalSleepHours += sleepHours;
       }
+
+      double calculatedAverageDailySleep = totalSleepHours / 7;
+      print("Average Sleep: $calculatedAverageDailySleep hours per day");
+
+      setState(() {
+        last7DaysData = updatedLast7DaysData;
+        _averageDailySleep = calculatedAverageDailySleep;
+        _isLoading = false;
+      });
+
+    } catch (e) {
+      print("Error fetching sleep data: $e");
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
+}
+
+
 
 int _getDayIndex(String dayOfWeek) {
   switch (dayOfWeek) {
@@ -111,6 +124,12 @@ int _getDayIndex(String dayOfWeek) {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
 
     final List<double> sleepData = showLast7Days ? last7DaysData : _groupDataByWeekday(last1MonthData);
+  
+    final double totalSleepLast7Days = last7DaysData.reduce((a, b) => a + b);
+    final double averageDailySleep = totalSleepLast7Days / 7;
+
+
+
   
     // Add null check and default value handling
     final double maxSleepHours = sleepData.isNotEmpty 
@@ -231,9 +250,6 @@ int _getDayIndex(String dayOfWeek) {
                     ? Last7DaysBarChart(
                       )
                     : Last1MonthBarChart(
-                        sleepData: _groupDataByWeekday(last1MonthData),
-                        maxSleepHours: maxSleepHours,
-                        daysOfWeek: daysOfWeek,
                       ),
 
                 ],
@@ -243,10 +259,10 @@ int _getDayIndex(String dayOfWeek) {
             SizedBox(height: 30),
 
             if (showLast7Days) ...[
-              Text(
-                " Average Sleep (daily): ${averageSleep.toStringAsFixed(1)} Hours",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+            Text(
+              "Average Daily Sleep: ${_averageDailySleep.toStringAsFixed(1)} hours",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             ] else ...[
               Text(
                 " Highest Sleep Time: $highestSleepDay",

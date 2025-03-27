@@ -31,7 +31,6 @@ class SleepTrackingController {
         substitutionValues['sleepStart'] = sleepStart;
         substitutionValues['sleepEnd'] = sleepEnd;
       } else {
-        // No timestamps for manual input
         query = '''
         INSERT INTO sleep_tracking (users_id, hours_asleep, iswearable_dev) 
         VALUES (@userId, @sleepHours, @isWearable)
@@ -60,7 +59,7 @@ class SleepTrackingController {
 
 Future<List<Map<String, dynamic>>> getLast7DaysSleepData(String userId) async {
   try {
-    print("Fetching sleep data for userId: $userId"); // Log the user ID being queried
+    print("Fetching sleep data for userId: $userId"); 
 
     await dbConnection.connectToDatabase();
 
@@ -103,13 +102,11 @@ ORDER BY wd.day_order;
       substitutionValues: {'userId': userId},
     );
 
-    // Convert results to a list of maps
     List<Map<String, dynamic>> formattedResults = results.map((row) => {
       "day_of_week": row[0], 
       "total_sleep_hours": row[1]
     }).toList();
 
-    // Log the fetched results
     print("Fetched Sleep Data:");
     for (var data in formattedResults) {
       print("Day: ${data['day_of_week']}, Sleep Hours: ${data['total_sleep_hours']}");
@@ -131,144 +128,116 @@ Future<List<Map<String, dynamic>>> getLast1MonthSleepData(String userId) async {
     await dbConnection.connectToDatabase();
 
     String query = '''
-    WITH month_days AS (
-        SELECT generate_series(1, 31) AS day_of_month
-    )
+WITH last_30_days AS (
+    SELECT generate_series(
+        CURRENT_DATE - INTERVAL '30 days', 
+        CURRENT_DATE, 
+        INTERVAL '1 day'
+    )::DATE AS sleep_date
+)
+SELECT 
+    TO_CHAR(DATE_TRUNC('week', l30.sleep_date), 'YYYY-MM-DD') AS week_start,
+    COALESCE(SUM(st.hours_asleep), 0) AS total_sleep_hours
+FROM last_30_days l30
+LEFT JOIN (
     SELECT 
-        md.day_of_month,
-        COALESCE(SUM(st.hours_asleep), 0) AS total_sleep_hours
-    FROM month_days md
-    LEFT JOIN (
-        SELECT 
-            EXTRACT(DAY FROM created_at) AS day_of_month,
-            hours_asleep
-        FROM sleep_tracking
-        WHERE 
-            users_id = @userId AND 
-            created_at >= DATE_TRUNC('month', CURRENT_DATE) AND 
-            created_at < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
-    ) st ON md.day_of_month = st.day_of_month
-    GROUP BY md.day_of_month
-    ORDER BY md.day_of_month;
+        DATE(created_at) AS sleep_date,
+        hours_asleep
+    FROM sleep_tracking
+    WHERE users_id = @userId
+) st ON l30.sleep_date = st.sleep_date
+GROUP BY DATE_TRUNC('week', l30.sleep_date)
+ORDER BY week_start;
     ''';
 
-    // Print the full query for debugging
-    print("Executing Query:");
-    print(query);
-    print("User ID: $userId");
+    print("Executing Query: $query");
 
-    List<List<dynamic>> results = await dbConnection.connection.query(
-      query,
-      substitutionValues: {'userId': userId},
-    );
+    var results = await dbConnection.connection.query(query, 
+      substitutionValues: {'userId': userId});
 
-    // Convert results to a list of maps
     List<Map<String, dynamic>> formattedResults = results.map((row) => {
-      "day_of_month": row[0].toString(), 
+      "week_start": row[0], 
       "total_sleep_hours": row[1]
     }).toList();
 
-    // Detailed logging of query results
     print("\nQuery Results:");
     print("Total rows returned: ${results.length}");
-    print("Formatted Results:");
-    for (var data in formattedResults) {
-      print("Day: ${data['day_of_month']}, Sleep Hours: ${data['total_sleep_hours']}");
-    }
+    formattedResults.forEach((data) {
+      print("Day: ${data['week_start']}, Sleep Hours: ${data['total_sleep_hours']}");
+    });
 
-    // Additional debugging information
     if (formattedResults.isEmpty) {
-      print("WARNING: No sleep data found for the current month.");
+      print("WARNING: No sleep data found for the past 30 days.");
     }
 
     return formattedResults;
-  } catch (e) {
-    print("Error fetching 1 month sleep data: $e");
-    
-    // Print stack trace for more detailed error information
-    print("Stack Trace: $StackTrace");
-    
+  } catch (e, stackTrace) {
+    print("Error fetching 1-month sleep data: $e");
+    print("Stack Trace: $stackTrace");
     return [];
   } finally {
-    dbConnection.closeConnection();
+    await dbConnection.closeConnection();
   }
 }
 
-// Future<List<Map<String, dynamic>>> get1MonthSleepDataWithCustomRange(
-//   String userId, DateTime startDate, DateTime endDate) async {
-//   try {
-//     print("Fetching sleep data for userId: $userId from $startDate to $endDate");
+Future<List<Map<String, dynamic>>> getLast1MonthSleepDataByDay(String userId) async {
+  try {
+    print("Fetching 1 month sleep data by day for getLast1MonthSleepDataByDay  userId: $userId");
 
-//     await dbConnection.connectToDatabase();
+    await dbConnection.connectToDatabase();
 
-//     String query = '''
-//     WITH daily_sleep AS (
-//         SELECT 
-//             DATE(created_at) AS sleep_date,  
-//             SUM(hours_asleep) AS total_sleep_per_day
-//         FROM sleep_tracking
-//         WHERE users_id = @userId
-//             AND created_at >= @startDate
-//             AND created_at < @endDate
-//         GROUP BY sleep_date  
-//     ),
-//     monthly_sleep AS (
-//         SELECT 
-//             DATE_TRUNC('month', sleep_date) AS month_start,
-//             SUM(total_sleep_per_day) AS total_sleep_hours
-//         FROM daily_sleep
-//         GROUP BY month_start
-//     ),
-//     months AS (
-//         SELECT generate_series(
-//             DATE_TRUNC('month', @startDate),  
-//             DATE_TRUNC('month', @endDate),  
-//             INTERVAL '1 month'
-//         ) AS month_start
-//     )
-//     SELECT 
-//         TO_CHAR(months.month_start, 'Mon') AS month_start_date,
-//         COALESCE(monthly_sleep.total_sleep_hours, 0) AS total_sleep_hours
-//     FROM months
-//     LEFT JOIN monthly_sleep 
-//         ON monthly_sleep.month_start = months.month_start
-//     ORDER BY months.month_start;
-//     ''';
+    String query = '''
+    WITH last_30_days AS (
+        SELECT generate_series(
+            CURRENT_DATE - INTERVAL '30 days', 
+            CURRENT_DATE, 
+            INTERVAL '1 day'
+        )::DATE AS sleep_date
+    )
+    SELECT 
+        l30.sleep_date AS date,
+        COALESCE(SUM(st.hours_asleep), 0) AS total_sleep_hours
+    FROM last_30_days l30
+    LEFT JOIN (
+        SELECT 
+            DATE(created_at) AS sleep_date,
+            hours_asleep
+        FROM sleep_tracking
+        WHERE users_id = @userId
+    ) st ON l30.sleep_date = st.sleep_date
+    GROUP BY l30.sleep_date
+    ORDER BY l30.sleep_date;
+    ''';
 
-//     List<List<dynamic>> results = await dbConnection.connection.query(
-//       query,
-//       substitutionValues: {
-//         'userId': userId,
-//         'startDate': startDate,
-//         'endDate': endDate,
-//       },
-//     );
+    print("Executing Query: $query");
 
-//     // Convert results into a list of maps
-//     List<Map<String, dynamic>> formattedResults = results.map((row) => {
-//           "month_start_date": row[0], // YYYY-MM format
-//           "total_sleep_hours": row[1]
-//         }).toList();
+    var results = await dbConnection.connection.query(query, 
+      substitutionValues: {'userId': userId});
 
-//     print("Fetched Monthly Sleep Data:");
-//     formattedResults.forEach((data) {
-//       print("Month: ${data['month_start_date']}, Sleep Hours: ${data['total_sleep_hours']}");
-//     });
+    List<Map<String, dynamic>> formattedResults = results.map((row) => {
+      "date": row[0], 
+      "total_sleep_hours": row[1]
+    }).toList();
 
-//     return formattedResults;
-//   } catch (e) {
-//     print("Error fetching sleep data: $e");
-//     return [];
-//   } finally {
-//     dbConnection.closeConnection();
-//   }
-// }
+    print("\nQuery Results:");
+    print("Total rows returned: ${results.length}");
+    formattedResults.forEach((data) {
+      print("Date: ${data['date']}, Sleep Hours: ${data['total_sleep_hours']}");
+    });
 
+    if (formattedResults.isEmpty) {
+      print("WARNING: No sleep data found for the past 30 days.");
+    }
 
-
-
-
-
+    return formattedResults;
+  } catch (e, stackTrace) {
+    print("Error fetching 1-month sleep data by day: $e");
+    print("Stack Trace: $stackTrace");
+    return [];
+  } finally {
+    await dbConnection.closeConnection();
+  }
 }
 
 
+}
