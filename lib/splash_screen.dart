@@ -111,11 +111,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             ),
             const SizedBox(height: 20),
 
-            // "HelpMate" Text Appears Last
+            // "HealthMate" Text Appears Last
             FadeTransition(
               opacity: _textOpacity,
               child: const Text(
-                "HealthMate",
+                "HealthMate" ,
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
             ),
