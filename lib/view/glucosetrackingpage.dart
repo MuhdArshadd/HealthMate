@@ -9,6 +9,10 @@ import 'package:provider/provider.dart';
 import '../AuthProvider/Auth_provider.dart';
 import "../model/user_model.dart";
 
+import '../view/barchart/glucose_chart_last7days.dart';
+import '../view/barchart/glucose_chart_last1month.dart';
+import '../controller/glucose_tracking_controller.dart';
+
 
 class GlucoseTrackingPage extends StatefulWidget {
   @override
@@ -16,7 +20,13 @@ class GlucoseTrackingPage extends StatefulWidget {
 }
 
 class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
-  bool showLast7Days = true; // Default to "Last 7 Days"
+    bool showLast7Days = true;
+    double avgGlucose = 0.0;
+    double avg1MonthGlucose = 0.0;
+    bool _isLoading = true;
+
+
+final GlucoseTrackingController _glucoseTrackingController = GlucoseTrackingController();
 
   // Sample glucose data (mg/dL)
   final List<double> last7DaysData = [80, 110, 95, 130, 85, 70, 120];
@@ -30,6 +40,40 @@ class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
 
   final List<String> daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
+
+    @override
+  void initState() {
+    super.initState();
+    _fetchAverageGlucose();
+  }
+
+Future<void> _fetchAverageGlucose() async {
+  final user = Provider.of<AuthProvider>(context, listen: false).user;
+  
+  if (user != null) {
+    try {
+      final fetchedAvgGlucose = await _glucoseTrackingController.getLast7DaysAverageDailyGlucose(user.userId);
+
+      print("Average glucose: $fetchedAvgGlucose");
+      final fetchAvgOneMonthGlucose = await _glucoseTrackingController.getLast1MonthAverageDailyGlucose(user.userId);
+      print("Average glucose: $fetchAvgOneMonthGlucose");
+
+      setState(() {
+        avgGlucose = fetchedAvgGlucose;  
+        avg1MonthGlucose = fetchAvgOneMonthGlucose;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching average glucose: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+}
+
+
+
   void _showAddGlucoseEntryDialog() {
 
     final user = Provider.of<AuthProvider>(context, listen: false).user;
@@ -40,7 +84,8 @@ class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
     );
   }
 
-  // Function for grouping last 1 month data by weekday (currently averaging)
+
+
   List<double> _groupDataByWeekday(List<double> monthData) {
     List<double> weeklySum = List.filled(7, 0.0);
 
@@ -58,12 +103,12 @@ class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
     
     final user = Provider.of<AuthProvider>(context, listen: false).user;
 
-    final List<double> glucoseData = showLast7Days ? last7DaysData : _groupDataByWeekday(last1MonthData);
-    final double maxGlucose = glucoseData.reduce((a, b) => a > b ? a : b);
+    // final List<double> glucoseData = showLast7Days ? last7DaysData : _groupDataByWeekday(last1MonthData);
+    // final double maxGlucose = glucoseData.reduce((a, b) => a > b ? a : b);
     // Calculate the correct average based on the view
-    final double avgGlucose = showLast7Days
-        ? last7DaysData.reduce((a, b) => a + b) / last7DaysData.length
-        : last1MonthData.reduce((a, b) => a + b) / last1MonthData.length;
+    // final double avgGlucose = showLast7Days
+    //     ? last7DaysData.reduce((a, b) => a + b) / last7DaysData.length
+    //     : last1MonthData.reduce((a, b) => a + b) / last1MonthData.length;
 
     return Scaffold(
       appBar: CustomAppBar(),
@@ -157,63 +202,36 @@ class _GlucoseTrackingPageState extends State<GlucoseTrackingPage> {
                   ),
 
                   SizedBox(height: 20),
-
-                  // Bar Chart with Dynamic Scaling
-                  Container(
-                    height: 180,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: List.generate(
-                        glucoseData.length,
-                            (index) {
-                          final double heightPercentage = (glucoseData[index] / maxGlucose) * 150;
-                          return Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Container(
-                                    height: heightPercentage,
-                                    width: 15,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black,
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(4),
-                                        topRight: Radius.circular(4),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 5),
-
-                                  Text(daysOfWeek[index % 7],
-                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                showLast7Days
+                  ? GlucoseLast7DaysBarChart(
+                    )
+                  : GlucoseLast1MonthBarChart(
+                    
                   ),
                 ],
               ),
             ),
 
+
             SizedBox(height: 20),
-            // Average Glucose
-            Text(
-              "Average Glucose (daily): ${avgGlucose.toStringAsFixed(1)} mg/dL",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            if (showLast7Days) ...[
+                   Text(
+                  "Average Glucose (daily): $avgGlucose mg/dL",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+            ] else ... [
+                  Text(
+                  "Average Glucose (daily): $avg1MonthGlucose mg/dL",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+            ]
+
           ],
         ),
       ),
       bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: 0, // Keeps Home highlighted
+        currentIndex: 0, 
         onTap: (index) {
-          // Navigate back to MainNavigationScreen with the correct index
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(

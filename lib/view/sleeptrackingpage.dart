@@ -23,7 +23,9 @@ class _SleepTrackingPageState extends State<SleepTrackingPage> {
   List<double> last7DaysData = List.filled(7, 0.0);
   List<double> last1MonthData = List.filled(30, 0.0);
   bool _isLoading = true;
+  double _avg1MonthSleep = 0.0;
   double _averageDailySleep = 0.0;
+  String _highest1MonthSleep = '';
 
   final List<String> daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -33,6 +35,7 @@ class _SleepTrackingPageState extends State<SleepTrackingPage> {
   void initState() {
     super.initState();
     _fetchSleepData();
+    _fetchAverage1Month();
   }
 
 Future<void> _fetchSleepData() async {
@@ -54,7 +57,7 @@ Future<void> _fetchSleepData() async {
       }
 
       double calculatedAverageDailySleep = totalSleepHours / 7;
-      print("Average Sleep: $calculatedAverageDailySleep hours per day");
+      print("Average Slee for Last 7 Days 1111: $calculatedAverageDailySleep hours per day");
 
       setState(() {
         last7DaysData = updatedLast7DaysData;
@@ -64,6 +67,31 @@ Future<void> _fetchSleepData() async {
 
     } catch (e) {
       print("Error fetching sleep data: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+}
+
+Future<void> _fetchAverage1Month() async {
+  final user = Provider.of<AuthProvider>(context, listen: false).user;
+  
+  if (user != null) {
+    try {
+      final fetchedAvgSleep = await _sleepTrackingController.getAverageDailySleepLast30Days(user.userId);
+      
+      print("Average Sleep (Rounded by SQL): $fetchedAvgSleep");
+
+      final fetchedHighestSleep = await _sleepTrackingController.getDayWithHighestSleep(user.userId);
+
+      setState(() {
+        _avg1MonthSleep = fetchedAvgSleep; 
+        _highest1MonthSleep = fetchedHighestSleep; 
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching average sleep: $e");
       setState(() {
         _isLoading = false;
       });
@@ -132,24 +160,24 @@ int _getDayIndex(String dayOfWeek) {
 
   
     // Add null check and default value handling
-    final double maxSleepHours = sleepData.isNotEmpty 
-      ? (sleepData.reduce((a, b) => a > b ? a : b) > 0 
-          ? sleepData.reduce((a, b) => a > b ? a : b) 
-          : 8.0) // Default to 8 if no positive values
-      : 10.0; // Default max if list is empty
+    // final double maxSleepHours = sleepData.isNotEmpty 
+    //   ? (sleepData.reduce((a, b) => a > b ? a : b) > 0 
+    //       ? sleepData.reduce((a, b) => a > b ? a : b) 
+    //       : 8.0) // Default to 8 if no positive values
+    //   : 10.0; // Default max if list is empty
 
-    final List<double> validSleepData = last7DaysData.where((hours) => hours > 0).toList();
-    final double averageSleep = validSleepData.isNotEmpty
-        ? validSleepData.reduce((a, b) => a + b) / validSleepData.length
-        : 0.0;
+    // final List<double> validSleepData = last7DaysData.where((hours) => hours > 0).toList();
+    // final double averageSleep = validSleepData.isNotEmpty
+    //     ? validSleepData.reduce((a, b) => a + b) / validSleepData.length
+    //     : 0.0;
 
 
-    final int highestSleepIndex = sleepData.isNotEmpty 
-      ? sleepData.indexOf(sleepData.reduce((a, b) => a > b ? a : b)) 
-      : 0;
+    // final int highestSleepIndex = sleepData.isNotEmpty 
+    //   ? sleepData.indexOf(sleepData.reduce((a, b) => a > b ? a : b)) 
+    //   : 0;
 
-    final List<String> fullDaysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    final String highestSleepDay = fullDaysOfWeek[highestSleepIndex];
+    // final List<String> fullDaysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    // final String highestSleepDay = fullDaysOfWeek[highestSleepIndex];
 
 
     return Scaffold(
@@ -194,7 +222,6 @@ int _getDayIndex(String dayOfWeek) {
 
             SizedBox(height: 35),
 
-            // Blue Container Box (Filters + Graph)
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -245,7 +272,6 @@ int _getDayIndex(String dayOfWeek) {
 
                   SizedBox(height: 20),
 
-                  // Bar Chart with Dynamic Scaling
                   showLast7Days
                     ? Last7DaysBarChart(
                       )
@@ -265,12 +291,12 @@ int _getDayIndex(String dayOfWeek) {
             ),
             ] else ...[
               Text(
-                " Highest Sleep Time: $highestSleepDay",
+                " Highest Sleep Time: $_highest1MonthSleep",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Text(
-                " Average Sleep (daily): ${averageSleep.toStringAsFixed(1)} Hours",
+                " Average Sleep (daily): $_avg1MonthSleep Hours",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],

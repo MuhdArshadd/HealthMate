@@ -82,6 +82,10 @@ class UserController {
     await dbConnection.connectToDatabase();
 
     try {
+    // if (dbConnection.connection == null || dbConnection.connection.isClosed) {
+    //   print("Reconnecting to database...");
+    //   await dbConnection.connectToDatabase();
+    // }
       var result = await dbConnection.connection.query(
         "SELECT users_id, username, email_address, image_byte, password, isgoogle FROM users WHERE email_address = @username OR username = @username",
         substitutionValues: {'username': username},

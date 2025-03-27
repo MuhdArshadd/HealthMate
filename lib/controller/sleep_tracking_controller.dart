@@ -150,7 +150,7 @@ GROUP BY DATE_TRUNC('week', l30.sleep_date)
 ORDER BY week_start;
     ''';
 
-    print("Executing Query: $query");
+    // print("Executing Query: $query");
 
     var results = await dbConnection.connection.query(query, 
       substitutionValues: {'userId': userId});
@@ -180,64 +180,121 @@ ORDER BY week_start;
   }
 }
 
-Future<List<Map<String, dynamic>>> getLast1MonthSleepDataByDay(String userId) async {
+Future<double> getAverageDailySleepLast30Days(String userId) async {
   try {
-    print("Fetching 1 month sleep data by day for getLast1MonthSleepDataByDay  userId: $userId");
+    print("Fetching average daily sleep for the last 30 days for userId: $userId");
 
     await dbConnection.connectToDatabase();
 
     String query = '''
     WITH last_30_days AS (
         SELECT generate_series(
-            CURRENT_DATE - INTERVAL '30 days', 
+            CURRENT_DATE - INTERVAL '29 days', 
             CURRENT_DATE, 
             INTERVAL '1 day'
         )::DATE AS sleep_date
     )
     SELECT 
-        l30.sleep_date AS date,
-        COALESCE(SUM(st.hours_asleep), 0) AS total_sleep_hours
-    FROM last_30_days l30
-    LEFT JOIN (
+        COALESCE(ROUND(AVG(total_sleep_hours), 2), 0) AS avg_sleep_hours
+    FROM (
         SELECT 
-            DATE(created_at) AS sleep_date,
-            hours_asleep
-        FROM sleep_tracking
-        WHERE users_id = @userId
-    ) st ON l30.sleep_date = st.sleep_date
-    GROUP BY l30.sleep_date
-    ORDER BY l30.sleep_date;
+            l30.sleep_date AS date,
+            COALESCE(SUM(st.hours_asleep), 0) AS total_sleep_hours
+        FROM last_30_days l30
+        LEFT JOIN (
+            SELECT 
+                DATE(created_at) AS sleep_date,
+                hours_asleep
+            FROM sleep_tracking
+            WHERE users_id = @userId
+        ) st ON l30.sleep_date = st.sleep_date
+        GROUP BY l30.sleep_date
+    ) daily_sleep;
     ''';
 
-    print("Executing Query: $query");
-
-    var results = await dbConnection.connection.query(query, 
+    var result = await dbConnection.connection.query(query, 
       substitutionValues: {'userId': userId});
 
-    List<Map<String, dynamic>> formattedResults = results.map((row) => {
-      "date": row[0], 
-      "total_sleep_hours": row[1]
-    }).toList();
+    print("Raw Query Result: $result");
 
-    print("\nQuery Results:");
-    print("Total rows returned: ${results.length}");
-    formattedResults.forEach((data) {
-      print("Date: ${data['date']}, Sleep Hours: ${data['total_sleep_hours']}");
-    });
+    double avgSleepHours = result.isNotEmpty && result.first[0] != null 
+        ? double.tryParse(result.first[0].toString()) ?? 0.0
+        : 0.0;
 
-    if (formattedResults.isEmpty) {
-      print("WARNING: No sleep data found for the past 30 days.");
-    }
+    print("Average Daily Sleep (Last 30 Days): $avgSleepHours hours");
 
-    return formattedResults;
+    return avgSleepHours;
   } catch (e, stackTrace) {
-    print("Error fetching 1-month sleep data by day: $e");
+    print("Error fetching average sleep for last 30 days: $e");
     print("Stack Trace: $stackTrace");
-    return [];
+    return 0.0;
   } finally {
     await dbConnection.closeConnection();
   }
 }
+
+
+
+
+Future<String> getDayWithHighestSleep(String userId) async {
+  try {
+    print("Fetching day with highest sleep for userId: $userId");
+
+    await dbConnection.connectToDatabase();
+
+    String query = '''
+    WITH last_30_days AS (
+        SELECT generate_series(
+            CURRENT_DATE - INTERVAL '29 days', 
+            CURRENT_DATE, 
+            INTERVAL '1 day'
+        )::DATE AS sleep_date
+    ),
+    daily_sleep AS (
+        SELECT 
+            l30.sleep_date AS date,
+            COALESCE(SUM(st.hours_asleep), 0) AS total_sleep_hours
+        FROM last_30_days l30
+        LEFT JOIN (
+            SELECT 
+                DATE(created_at) AS sleep_date,
+                hours_asleep
+            FROM sleep_tracking
+            WHERE users_id = @userId
+        ) st ON l30.sleep_date = st.sleep_date
+        GROUP BY l30.sleep_date
+    )
+    SELECT 
+        TO_CHAR(date, 'Day') AS highest_sleep_day
+    FROM daily_sleep
+    ORDER BY total_sleep_hours DESC
+    LIMIT 1;
+    ''';
+
+    // print("Executing Query: $query");
+
+    var result = await dbConnection.connection.query(query, 
+      substitutionValues: {'userId': userId});
+
+    print("Raw Query Result for Highest Sleep Day: $result");
+
+
+    String highestSleepDay = result.isNotEmpty ? (result.first[0] as String).trim() : "No Data";
+
+    print("Day with Highest Sleep: $highestSleepDay");
+
+    return highestSleepDay;
+  } catch (e, stackTrace) {
+    print("Error fetching highest sleep day: $e");
+    print("Stack Trace: $stackTrace");
+    return "Error";
+  } finally {
+    await dbConnection.closeConnection();
+  }
+}
+
+
+
 
 
 }
