@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../AuthProvider/Auth_provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'splash_screen.dart';
-
+//test
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
